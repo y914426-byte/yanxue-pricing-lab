@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {demo,calculate,breakEven,validate} from '../lib/pricing.ts';
+const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-6, a+' != '+b);
+const r=calculate(demo);near(r.revenue,11920);near(r.actual,7796);near(r.financial,6496);near(r.profit,4124);near(r.margin,4124/11920);
+const taxed={...demo,tax:6};const t=calculate(taxed);near(t.taxCost,715.2);near(calculate(taxed,40,t.breakPrice).profit,0);near(calculate(taxed,40,t.targetPrice).margin,.25);
+assert.equal(calculate({...demo,paying:0}).margin,null);assert.equal(calculate({...demo,paying:0}).targetPrice,null);assert.equal(calculate({...demo,tax:80,target:25}).targetPrice,null);
+assert.ok(validate({...demo,paying:-1}).length);assert.ok(validate({...demo,price:NaN}).length);assert.ok(validate({...demo,costs:[{...demo.costs[1],capacity:0}]}).length);
+const crossing=breakEven(demo);assert.ok(crossing);assert.ok(calculate(demo,crossing).profit>=0);for(let n=1;n<crossing;n++)assert.ok(calculate(demo,n).profit<0);
+near(calculate(demo,49).items[1].total,2400);near(calculate(demo,48).items[1].total,1200);
+assert.equal(breakEven({...demo,price:0}),null);
+console.log('Passed: demo totals, tax and target price, zero/invalid inputs, batch boundaries, first break-even.');

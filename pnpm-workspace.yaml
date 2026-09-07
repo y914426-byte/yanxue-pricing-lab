@@ -1,0 +1,7 @@
+allowBuilds:
+  esbuild: false
+  sharp: false
+  workerd: false
+# This static-only site does not run the optional local Cloudflare runtime.
+ignoredOptionalDependencies:
+  - '@cloudflare/workerd-windows-64'
