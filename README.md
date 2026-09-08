@@ -1,6 +1,6 @@
 # 研学定价台
 
-研学项目成本与定价测算网站。无需登录，所有计算在浏览器内完成，输入不上传、不持久化；刷新后恢复演示方案。
+研学项目成本与定价测算网站。计算无需登录。通过 ChatGPT 登录后，可为项目填写主题名称，将每次成本估算保存到账号专属的云端记录，跨设备查询和载入。未保存的修改不会自动同步。
 
 ## 功能
 
@@ -9,6 +9,8 @@
 - 对照原表的财务成本和实际成本，实际口径包含带班、操作费用。
 - 按收入计提自填税费比例；实时计算毛利、毛利率、保本价与目标售价。
 - 展示成本占比、招生人数敏感性和售价上下浮动 10% 的比较。
+- 云端记录保存完整参数、成本明细和时间，按主题搜索并分页查询；载入前确认，修改后保存为新的估算。
+- 每次保存使用唯一请求编号，重试不会重复写入；服务器按登录用户校验每次读取和写入权限。
 - 支持手机布局、键盘操作、成本项目添加、删除与撤销。
 
 ## 本地运行
@@ -26,9 +28,11 @@ pnpm typecheck
 pnpm build
 ~~~
 
-静态网站输出位于 dist/client。上传该目录即可部署到支持静态 HTML 的托管服务。Sites 发布配置位于 .openai/hosting.json。该项目不使用数据库或登录系统。
+网站使用 Cloudflare Worker 和 D1，Sites 发布配置位于 .openai/hosting.json。db/schema.ts 管理结构，pnpm db:generate 生成 Drizzle 迁移，发布时由 Sites 应用迁移并绑定 DB。不能只上传静态目录。
 
-Windows 构建脚本为 Vinext 成功退出预留短暂的本机资源清理时间，所有非零错误码仍正常传递。依赖安装脚本保持禁用，使用预编译平台包；静态网站不使用可选的本地 Cloudflare Worker 运行器。
+本地开发使用 Sites 模拟登录；运行开发服务器后，通过本地 D1 绑定执行 drizzle/*.sql 中的迁移再测试保存。生产登录由 Sites 的 /signin-with-chatgpt 和 /signout-with-chatgpt 处理，可信用户身份由平台注入，不能直接暴露 Worker 来接受外部自填身份头。
+
+Windows 构建脚本为 Vinext 成功退出预留短暂的本机资源清理时间，所有非零错误码仍正常传递。依赖安装脚本保持禁用，使用预编译平台包；本地云端功能使用 Cloudflare Worker 运行器。
 
 ## 计算模型
 
@@ -53,6 +57,9 @@ Windows 构建脚本为 Vinext 成功退出预留短暂的本机资源清理时�
 - app/page.tsx：参数输入、成本编辑和方案比较。
 - components/pricing-charts.tsx：成本占比与人数趋势。
 - lib/pricing.ts：计算与校验。
+- components/project-history.tsx：账号、主题名称、保存与历史查询。
+- lib/estimate-service.ts 与 app/api：账号隔离的云端记录接口。
+- tests/storage.test.mjs：数据库迁移、重启持久化、账号隔离、CSRF、重试、输入校验、搜索分页与故障响应。
 - tests/pricing.test.mjs：合计、税费、目标售价、零值、无效输入、按组边界与首次保本检查。
 
 支持时注册 WebMCP 的 read_pricing 与 configure_pricing。普通浏览器无需此能力；当前交付环境没有可用的 WebMCP 验证上下文，因此不宣称已完成该接口的浏览器契约测试。
