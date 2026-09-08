@@ -41,5 +41,10 @@ try{
  const first=await (await call('alice')).json(),second=await (await call('alice','?offset=20')).json();assert.equal(first.items.length,20);assert.equal(first.hasMore,true);assert.equal(second.items.length,3);assert.equal(second.hasMore,false);assert.equal(new Set([...first.items,...second.items].map(x=>x.id)).size,23);
  assert.equal((await call('alice','?offset=-1')).status,400);
  const failure=await estimateRequest(new Request(endpoint),'alice',()=>{throw new Error('offline')});assert.equal(failure.status,503);
+ const familyRecord={id:crypto.randomUUID(),title:'亲子一大两小',plan:{...demo,billing:'family',adultsPerFamily:1,childrenPerFamily:2,commission:4,reserve:8,costs:demo.costs.map((c,i)=>i===2?{...c,mode:'child'}:c)}};
+ assert.equal((await post(familyRecord)).status,201);
+ assert.deepEqual((await (await call('alice','?id='+familyRecord.id)).json()).plan,familyRecord.plan);
+ const familyList=await (await call('alice','?q='+encodeURIComponent('亲子'))).json();assert.equal(familyList.items[0].billing,'family');
+ assert.equal((await post({...familyRecord,id:crypto.randomUUID(),plan:{...familyRecord.plan,adultsPerFamily:'2'}})).status,400);
  console.log('Passed: SQLite migration, persistence after reopen, owner isolation, authentication, CSRF, malformed data, retry idempotency, search, pagination and outage response.');
 }finally{sqlite.close();rmSync(dir,{recursive:true,force:true});}

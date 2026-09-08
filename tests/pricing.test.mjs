@@ -8,4 +8,10 @@ assert.ok(validate({...demo,paying:-1}).length);assert.ok(validate({...demo,pric
 const crossing=breakEven(demo);assert.ok(crossing);assert.ok(calculate(demo,crossing).profit>=0);for(let n=1;n<crossing;n++)assert.ok(calculate(demo,n).profit<0);
 near(calculate(demo,49).items[1].total,2400);near(calculate(demo,48).items[1].total,1200);
 assert.equal(breakEven({...demo,price:0}),null);
-console.log('Passed: demo totals, tax and target price, zero/invalid inputs, batch boundaries, first break-even.');
+console.log('Passed: demo totals, tax and target price, zero/invalid inputs, batch boundaries, first break-even.');const family={...demo,billing:'family',paying:10,free:2,price:600,adultsPerFamily:2,childrenPerFamily:1,commission:5,reserve:10,tax:3,costs:[{...demo.costs[0],amount:100},{...demo.costs[2],mode:'child',amount:30},{...demo.costs[3],mode:'adult',amount:50},{...demo.costs[1],capacity:30,amount:1000},{...demo.costs[4],mode:'family',amount:20}]};
+const fr=calculate(family);assert.equal(fr.attendees,32);assert.equal(fr.adults,22);assert.equal(fr.children,10);assert.equal(fr.families,10);near(fr.subtotal,3700);near(fr.reserveCost,370);near(fr.commissionCost,300);near(fr.taxCost,180);near(fr.actual,4550);near(fr.profit,1450);
+near(calculate(family,10,fr.breakPrice).profit,0);near(calculate(family,10,fr.targetPrice).margin,.25);
+assert.equal(calculate(family,9).items[3].total,1000);assert.equal(calculate(family,10).items[3].total,2000);
+const fb=breakEven(family);assert.ok(fb);for(let n=1;n<fb;n++)assert.ok(calculate(family,n).profit<0);assert.ok(calculate(family,fb).profit>=0);
+assert.equal(calculate({...family,paying:0}).targetPrice,null);assert.ok(validate({...family,adultsPerFamily:0}).length);assert.ok(validate({...family,childrenPerFamily:1.5}).length);assert.ok(validate({...family,commission:NaN}).length);assert.ok(validate({...family,reserve:-1}).length);assert.ok(validate({...family,tax:99,commission:2}).length);assert.ok(validate({...family,billing:'person'}).length);
+console.log('Passed: family composition, adult/child/family costs, bus boundary, reserve, commission, target margin, first break-even and invalid inputs.');

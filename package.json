@@ -13,7 +13,8 @@
     "format": "oxfmt",
     "test": "node tests/pricing.test.mjs && node tests/storage.test.mjs && node tests/auth.test.mjs",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "build:pages": "pnpm build && node scripts/package-pages.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
