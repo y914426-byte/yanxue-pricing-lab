@@ -1,6 +1,6 @@
 # 研学定价台
 
-研学项目成本与定价测算网站。计算无需登录。通过 ChatGPT 登录后，可为项目填写主题名称，将每次成本估算保存到账号专属的云端记录，跨设备查询和载入。未保存的修改不会自动同步。
+研学项目成本与定价测算网站。计算无需登录。通过 Google 登录后，可为项目填写主题名称，将每次成本估算保存到账号专属的云端记录，跨设备查询和载入。未保存的修改不会自动同步。
 
 ## 功能
 
@@ -30,7 +30,11 @@ pnpm build
 
 网站使用 Cloudflare Worker 和 D1，Sites 发布配置位于 .openai/hosting.json。db/schema.ts 管理结构，pnpm db:generate 生成 Drizzle 迁移，发布时由 Sites 应用迁移并绑定 DB。不能只上传静态目录。
 
-本地开发使用 Sites 模拟登录；运行开发服务器后，通过本地 D1 绑定执行 drizzle/*.sql 中的迁移再测试保存。生产登录由 Sites 的 /signin-with-chatgpt 和 /signout-with-chatgpt 处理，可信用户身份由平台注入，不能直接暴露 Worker 来接受外部自填身份头。
+Google 登录使用官方 GIS 按钮和 jose 验证 Google JWKS、受众、签发者、有效期、nonce。服务器发放一次性挑战及 7 天 HttpOnly / Secure / SameSite=Lax 会话，D1 只保存会话令牌的 SHA-256。用户主键使用 Google sub，不按邮箱合并账号。
+
+将 .env.example 复制为 .env 并填写公开的 GOOGLE_CLIENT_ID；生产配置使用 Sites 环境变量。Google Cloud Web 客户端需授权网站来源；本地测试需单独授权 http://localhost:3000。不需要客户端密钥，Google 凭据不写入日志、数据库或浏览器存储。数据库迁移通过 drizzle 追加生成。
+
+/account/import 仅用于旧记录迁移：先登录 Google，再通过 Sites 验证原账号，明确确认后转移记录。普通登录不再依赖 ChatGPT。只在旧记录迁移中信任 Sites 注入的原账号身份头，不接受客户端指定记录归属。
 
 Windows 构建脚本为 Vinext 成功退出预留短暂的本机资源清理时间，所有非零错误码仍正常传递。依赖安装脚本保持禁用，使用预编译平台包；本地云端功能使用 Cloudflare Worker 运行器。
 
@@ -67,3 +71,5 @@ Windows 构建脚本为 Vinext 成功退出预留短暂的本机资源清理时�
 ## 使用边界
 
 示例费用不代表市场报价。请录入整次活动的全部费用；多天项目可先合并整次人均成本或拆分项目。税费是自填比例的预算估算，不是税务申报算法。达到目标毛利率只衡量成本覆盖与利润目标，不代表市场一定接受该价格。
+
+Google 身份验证的自动化测试使用临时 RSA 密钥签发测试凭据，验证完整签名与会话逻辑；不会在生产代码中绕过 Google 验证。真实 Google 账号的选择与同意由用户在 Google 页面完成。

@@ -1,3 +1,5 @@
-import {getChatGPTUser,chatGPTSignInPath,chatGPTSignOutPath} from '@/app/chatgpt-auth';
+import {env} from 'cloudflare:workers';
+import {getDb} from '@/db';
+import {getGoogleUser,authReply} from '@/lib/google-auth';
 export const dynamic='force-dynamic';
-export async function GET(){const user=await getChatGPTUser();return Response.json({user:user?{displayName:user.displayName}:null,signIn:chatGPTSignInPath('/'),signOut:chatGPTSignOutPath('/')},{headers:{'Cache-Control':'private, no-store','Vary':'Cookie'}});}
+export async function GET(request:Request){try{const user=await getGoogleUser(request,getDb);return authReply({user:user?{displayName:user.displayName,email:user.email}:null,clientId:env.GOOGLE_CLIENT_ID??null});}catch{return authReply({error:'账号服务暂不可用，请稍后重试'},503);}}
