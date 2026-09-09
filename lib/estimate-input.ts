@@ -14,6 +14,7 @@ export function parseEstimate(input:unknown):{id:string;title:string;plan:Plan}{
  ids.add(c.id);
  }
  const plan:Plan={paying:p.paying as number,free:p.free as number,price:p.price as number,tax:p.tax as number,target:p.target as number,costs:p.costs.map(c=>({id:c.id,name:c.name,mode:c.mode,amount:c.amount,quantity:c.quantity,capacity:c.capacity,actualOnly:c.actualOnly}))};
+ if(p.groupType!==undefined){if(typeof p.groupType!=='string'||!['student','family','senior','adult','company','custom'].includes(p.groupType))throw new Error('团体类型无效');plan.groupType=p.groupType as Plan['groupType'];}
  for(const key of ['billing','adultsPerFamily','childrenPerFamily','commission','reserve'] as const){if(p[key]!==undefined){if(key==='billing'){if(p[key]!=='person'&&p[key]!=='family')throw new Error('收费模式无效');plan.billing=p[key];}else{if(typeof p[key]!=='number'||!Number.isFinite(p[key]))throw new Error('亲子团或附加费参数无效');plan[key]=p[key];}}}
  const errors=validate(plan);if(errors.length)throw new Error(errors.join('；'));
  return {id:v.id,title:v.title.trim(),plan};
