@@ -14,9 +14,11 @@ export const accountLinks=sqliteTable('account_links',{
 },t=>[uniqueIndex('idx_account_links_google_owner').on(t.googleOwner)]);
 
 export const priceCatalogs=sqliteTable('price_catalogs',{
+ version:integer('version').notNull().default(1),importHash:text('import_hash').notNull().default(''),
  id:text('id').primaryKey(),ownerId:text('owner_id'),name:text('name').notNull(),source:text('source').notNull(),isActive:integer('is_active',{mode:'boolean'}).notNull().default(true),createdAt:text('created_at').notNull(),updatedAt:text('updated_at').notNull(),
 },t=>[index('idx_price_catalogs_owner_source').on(t.ownerId,t.source,t.updatedAt)]);
 
 export const priceItems=sqliteTable('price_items',{
+ projectName:text('project_name').notNull().default(''),validFrom:text('valid_from').notNull().default(''),validTo:text('valid_to').notNull().default(''),
  id:text('id').primaryKey(),catalogId:text('catalog_id').notNull(),groupType:text('group_type').notNull(),category:text('category').notNull(),name:text('name').notNull(),mode:text('mode').notNull(),amount:real('amount').notNull(),quantity:real('quantity').notNull().default(1),capacity:integer('capacity').notNull().default(1),minPeople:integer('min_people').notNull().default(0),maxPeople:integer('max_people').notNull().default(10000),actualOnly:integer('actual_only',{mode:'boolean'}).notNull().default(false),note:text('note').notNull().default(''),sortOrder:integer('sort_order').notNull().default(0),
 },t=>[index('idx_price_items_catalog_group').on(t.catalogId,t.groupType,t.sortOrder)]);

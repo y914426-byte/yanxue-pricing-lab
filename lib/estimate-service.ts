@@ -7,7 +7,7 @@ export async function estimateRequest(request:Request,owner:string|null,db:()=>D
  if(request.method==='POST'){
  if(request.headers.get('Origin')!==url.origin)return reply({error:'请求来源无效，请刷新页面后重试'},403);
  if(!request.headers.get('content-type')?.startsWith('application/json'))return reply({error:'请求格式无效'},415);
- let value;try{const reader=request.body?.getReader();let raw='';let size=0;const decoder=new TextDecoder();if(reader){while(true){const chunk=await reader.read();if(chunk.done)break;size+=chunk.value.byteLength;if(size>100000){await reader.cancel();return reply({error:'记录过大，请减少成本明细'},413);}raw+=decoder.decode(chunk.value,{stream:true});}raw+=decoder.decode();}value=parseEstimate(JSON.parse(raw));}catch(e){return reply({error:e instanceof Error?e.message:'估算格式无效'},400)}
+ let value;try{const reader=request.body?.getReader();let raw='';let size=0;const decoder=new TextDecoder();if(reader){while(true){const chunk=await reader.read();if(chunk.done)break;size+=chunk.value.byteLength;if(size>262144){await reader.cancel();return reply({error:'记录过大，请减少成本明细'},413);}raw+=decoder.decode(chunk.value,{stream:true});}raw+=decoder.decode();}value=parseEstimate(JSON.parse(raw));}catch(e){return reply({error:e instanceof Error?e.message:'估算格式无效'},400)}
  try{
  const database=db();const now=new Date().toISOString();
  await database.prepare('INSERT INTO estimates (id, owner_id, title, plan_json, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING').bind(value.id,owner,value.title,JSON.stringify(value.plan),now).run();

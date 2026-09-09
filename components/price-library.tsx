@@ -1,34 +1,499 @@
 'use client';
-import {useEffect,useMemo,useState} from 'react';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue} from '@/components/ui/select';
-import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow} from '@/components/ui/table';
-import {Database,Upload,Check} from 'lucide-react';
-import type {Cost,GroupType,Plan} from '@/lib/pricing';
-
-type PriceItem={id:string;catalogId:string;groupType:GroupType;category:string;name:string;mode:Cost['mode'];amount:number;quantity:number;capacity:number;minPeople:number;maxPeople:number;actualOnly:boolean;note:string;sortOrder:number};
-type Catalog={id:string;name:string;source:'system'|'user';updatedAt:string;items:PriceItem[]};
-type Api={catalogs:Catalog[];needsLogin?:boolean;error?:string};
-const groupOptions=[['student','学生团'],['family','亲子团'],['senior','老年团'],['adult','成人团'],['company','企业团'],['custom','自定义']] as const;
-const modeMap:Record<string,Cost['mode']>={'固定数量':'fixed','fixed':'fixed','按参与人数':'person','按人数':'person','person':'person','按容量分批':'batch','batch':'batch','按成人':'adult','adult':'adult','按儿童':'child','child':'child','按家庭组数':'family','按家庭':'family','family':'family'};
-const groupMap:Record<string,GroupType>={'学生团':'student','student':'student','亲子团':'family','family':'family','老年团':'senior','senior':'senior','成人团':'adult','adult':'adult','企业团':'company','company':'company','自定义':'custom','custom':'custom'};
-function splitLine(line:string,sep:string){return line.split(sep).map(v=>v.trim().replace(/^"|"$/g,''));}
-function parseRows(text:string){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);if(lines.length<2)throw new Error('至少需要表头和 1 行价格数据');const sep=lines[0].includes('\t')?'\t':',';const headers=splitLine(lines[0],sep);const index=(...names:string[])=>headers.findIndex(h=>names.includes(h));const at=(cells:string[],...names:string[])=>{const i=index(...names);return i>=0?cells[i]:'';};return lines.slice(1).map((line,i)=>{const c=splitLine(line,sep),name=at(c,'项目名称','name'),amount=Number(at(c,'单价','amount')),group=groupMap[at(c,'团体类型','groupType')]||'student',mode=modeMap[at(c,'计费方式','mode')]||'person';if(!name||!Number.isFinite(amount))throw new Error(`第 ${i+2} 行缺少项目名称或有效单价`);return {groupType:group,category:at(c,'分类','category')||'其他',name,mode,amount,quantity:Number(at(c,'数量','quantity')||1),capacity:Number(at(c,'批次容量','capacity')||1),minPeople:Number(at(c,'最低人数','minPeople')||0),maxPeople:Number(at(c,'最高人数','maxPeople')||10000),note:at(c,'备注','note')};});}
-export function PriceLibrary({plan,onPlan}:{plan:Plan;onPlan:(p:Plan)=>void}){
- const [source,setSource]=useState<'system'|'user'>('system'),[catalogs,setCatalogs]=useState<Catalog[]>([]),[catalogId,setCatalogId]=useState(''),[loading,setLoading]=useState(false),[message,setMessage]=useState(''),[showImport,setShowImport]=useState(false),[importName,setImportName]=useState('我的价格库'),[paste,setPaste]=useState(''),[preview,setPreview]=useState<Record<string,unknown>[]>([]);
- const groupType=plan.groupType??(plan.billing==='family'?'family':'student');
- useEffect(()=>{const controller=new AbortController();setLoading(true);setMessage('');fetch(`/api/price-library?source=${source}&group=${groupType}`,{cache:'no-store',signal:controller.signal}).then(r=>r.json()).then((data:Api)=>{if(data.error)throw new Error(data.error);setCatalogs(data.catalogs);setCatalogId(v=>data.catalogs.some(c=>c.id===v)?v:(data.catalogs[0]?.id??''));if(source==='user'&&data.needsLogin)setMessage('登录后可以导入和使用自己的价格库。');}).catch(e=>{if(!controller.signal.aborted)setMessage(e.message||'价格库读取失败');}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[source,groupType]);
- const catalog=useMemo(()=>catalogs.find(c=>c.id===catalogId)??catalogs[0],[catalogs,catalogId]);const eligible=(catalog?.items??[]).filter(x=>{const n=plan.billing==='family'?plan.paying:plan.paying+plan.free;return n>=x.minPeople&&n<=x.maxPeople;});
- function useItem(item:PriceItem){const next:Cost={id:crypto.randomUUID(),name:item.name,mode:item.mode,amount:item.amount,quantity:item.quantity||1,capacity:item.capacity||1,actualOnly:item.actualOnly};onPlan({...plan,costs:[...plan.costs,next]});setMessage(`已添加“${item.name}” ¥${item.amount}`);}
- function useAll(){const names=new Set(plan.costs.map(c=>c.name));const additions=eligible.filter(i=>!names.has(i.name)).map(i=>({id:crypto.randomUUID(),name:i.name,mode:i.mode,amount:i.amount,quantity:i.quantity||1,capacity:i.capacity||1,actualOnly:i.actualOnly}));onPlan({...plan,costs:[...plan.costs,...additions]});setMessage(additions.length?`已添加 ${additions.length} 条价格到成本明细。`:'这些项目已在成本明细中。');}
- async function importRows(){if(!preview.length)return;setLoading(true);setMessage('');try{const res=await fetch('/api/price-library',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:importName,rows:preview})});const data=await res.json();if(!res.ok)throw new Error(data.error||'导入失败');setMessage(`已导入 ${data.count} 条价格。`);setShowImport(false);setPreview([]);setPaste('');setSource('user');}catch(e){setMessage(e instanceof Error?e.message:'导入失败');}finally{setLoading(false);}}
- function previewText(text:string){setPaste(text);try{setPreview(parseRows(text));setMessage('');}catch(e){setPreview([]);if(text.trim())setMessage(e instanceof Error?e.message:'数据格式无效');}}
- return <section className="panel cost-editor" aria-labelledby="price-library-heading"><div className="editor-heading"><div><div className="section-title"><Database size={20}/><h2 id="price-library-heading">价格数据库</h2><span className="tag">{source==='system'?'平台标准':'我的价格库'}</span></div><p className="muted">按团体类型匹配固定价格，可单项采用或一键加入成本明细。</p></div><Button variant="outline" onClick={()=>setShowImport(v=>!v)}><Upload size={16}/>导入我的价格</Button></div>
- <div className="two-fields"><label className="field"><span>团体类型</span><Select value={groupType} onValueChange={v=>{if(!v)return;const g=v as GroupType;onPlan({...plan,groupType:g,billing:g==='family'?'family':plan.billing==='family'?'person':plan.billing});}}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{groupOptions.map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select></label><label className="field"><span>价格来源</span><Select value={source} onValueChange={v=>v&&setSource(v as 'system'|'user')}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="system">平台标准价格库</SelectItem><SelectItem value="user">我的价格库</SelectItem></SelectContent></Select></label></div>
- {catalogs.length>1&&<label className="field"><span>价格表</span><Select value={catalogId} onValueChange={v=>v&&setCatalogId(v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{catalogs.map(c=><SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></label>}
- {showImport&&<div className="restore-prompt"><div style={{width:'100%'}}><strong>导入个人价格库</strong><p className="field-note">支持 CSV 文件内容，或直接从 Excel 复制表格后粘贴。表头建议：团体类型、分类、项目名称、计费方式、单价、数量、批次容量、最低人数、最高人数、备注。</p><Input value={importName} maxLength={80} onChange={e=>setImportName(e.target.value)} placeholder="例如：2026秋季学校团队价格表"/><textarea value={paste} onChange={e=>previewText(e.target.value)} rows={7} style={{width:'100%',marginTop:12,padding:12,border:'1px solid var(--border)',borderRadius:8}} placeholder={'团体类型\t分类\t项目名称\t计费方式\t单价\n学生团\t门票\t学生票\t按儿童\t30\n学生团\t保险\t活动保险\t按人数\t5'}/><div style={{display:'flex',gap:8,marginTop:10,alignItems:'center'}}><Button disabled={!preview.length||loading||!importName.trim()} onClick={importRows}><Check size={16}/>确认导入 {preview.length||''}</Button><Button variant="outline" onClick={()=>{setShowImport(false);setPreview([]);setPaste('')}}>取消</Button></div></div></div>}
- {message&&<p role="status" className="history-message">{message}</p>}
- {loading?<p className="muted">正在读取价格库…</p>:eligible.length?<><div className="editor-heading"><div><strong>{catalog?.name}</strong><p className="field-note">已匹配 {eligible.length} 条当前团型价格。平台初始数据为示例价，请按实际政策维护。</p></div><Button onClick={useAll}>全部添加到成本明细</Button></div><Table><TableHeader><TableRow><TableHead>分类</TableHead><TableHead>项目</TableHead><TableHead>计费方式</TableHead><TableHead>参考价</TableHead><TableHead>备注</TableHead><TableHead/></TableRow></TableHeader><TableBody>{eligible.map(item=><TableRow key={item.id}><TableCell>{item.category}</TableCell><TableCell><strong>{item.name}</strong></TableCell><TableCell>{item.mode}</TableCell><TableCell>¥{item.amount}</TableCell><TableCell>{item.note||'—'}</TableCell><TableCell><Button variant="outline" size="sm" onClick={()=>useItem(item)}>采用</Button></TableCell></TableRow>)}</TableBody></Table></>:<p className="history-empty">当前团体类型还没有可用价格。可以切换价格来源，或导入自己的价格表。</p>}
- </section>;
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Database } from 'lucide-react';
+import { money, population, type Plan } from '@/lib/pricing';
+import {
+  adoptPrices,
+  matchesPrice,
+  groupOptions,
+  modeLabel,
+  type PriceCatalog,
+  type PriceItem,
+} from '@/lib/price-data';
+import { PriceImport } from './price-import';
+type Api = {
+  catalogs: PriceCatalog[];
+  selectedId?: string | null;
+  needsLogin?: boolean;
+  canManageSystem: boolean;
+  error?: string;
+};
+export function PriceLibrary({
+  plan,
+  onPlan,
+  management = false,
+}: {
+  plan: Plan;
+  onPlan: (plan: Plan) => void;
+  management?: boolean;
+}) {
+  const source = plan.priceSource ?? (management ? 'user' : 'system'),
+    group =
+      plan.groupType ?? (plan.billing === 'family' ? 'family' : 'student');
+  const [data, setData] = useState<Api | null>(null),
+    [revision, setRevision] = useState(0),
+    [error, setError] = useState(''),
+    [message, setMessage] = useState('');
+  const [importing, setImporting] = useState(false),
+    [editing, setEditing] = useState<PriceCatalog | undefined>(),
+    [changing, setChanging] = useState(false);
+  const [pending, setPending] = useState<PriceCatalog | null>(null);
+  const requestKey = JSON.stringify([
+    source,
+    group,
+    plan.priceCatalogId,
+    management,
+    revision,
+  ]);
+  const [loadedKey, setLoadedKey] = useState('');
+  const loading = loadedKey !== requestKey;
+  const ready = !loading && !error;
+  useEffect(() => {
+    const refresh = () => setRevision((v) => v + 1);
+    window.addEventListener('pricing-account-changed', refresh);
+    return () => window.removeEventListener('pricing-account-changed', refresh);
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    const query = new URLSearchParams({
+      source,
+      group,
+      ...(management ? { manage: '1' } : {}),
+      ...(plan.priceCatalogId ? { catalog: plan.priceCatalogId } : {}),
+    });
+    fetch('/api/price-library?' + query, {
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+      .then(async (r) => {
+        const value = (await r.json()) as Api;
+        if (!r.ok || value.error) throw new Error(value.error || '读取失败');
+        return value;
+      })
+      .then((value) => {
+        if (!controller.signal.aborted) {
+          setData(value);
+          setError('');
+          setLoadedKey(requestKey);
+        }
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) {
+          setData(null);
+          setError(e.message || '读取失败');
+          setLoadedKey(requestKey);
+        }
+      });
+    return () => controller.abort();
+  }, [source, group, plan.priceCatalogId, management, revision, requestKey]);
+  const catalog = ready
+    ? data?.catalogs.find((c) => c.id === data.selectedId)
+    : undefined;
+  const eligible = useMemo(
+    () =>
+      catalog?.isActive
+        ? catalog.items.filter((i) => matchesPrice(i, plan))
+        : [],
+    [catalog, plan],
+  );
+  const projects = [
+    ...new Set(
+      (catalog?.items ?? []).map((i) => i.projectName).filter(Boolean),
+    ),
+  ];
+  const ambiguous =
+    new Set(eligible.map((i) => i.name)).size !== eligible.length;
+  function selectSource(value: 'system' | 'user') {
+    setImporting(false);
+    setEditing(undefined);
+    setMessage('');
+    onPlan({ ...plan, priceSource: value, priceCatalogId: '' });
+  }
+  function adopt(items: PriceItem[]) {
+    if (!catalog || !ready) return;
+    try {
+      const next = adoptPrices(plan, catalog, items),
+        count = next.costs.length - plan.costs.length;
+      onPlan(next);
+      setMessage(
+        count
+          ? `已加入 ${count} 项；同名或已采用项目已跳过。`
+          : '同名或相同来源项目已存在，请在成本明细中核对，避免重复计费。',
+      );
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : '无法采用价格');
+    }
+  }
+  async function toggle() {
+    if (!pending) return;
+    setChanging(true);
+    setError('');
+    try {
+      const res = await fetch('/api/price-library', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: pending.id,
+          version: pending.version,
+          isActive: !pending.isActive,
+        }),
+      });
+      const value = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(value.error);
+      setPending(null);
+      setRevision((v) => v + 1);
+      setMessage('价格库状态已更新。');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '保存失败');
+    } finally {
+      setChanging(false);
+    }
+  }
+  return (
+    <section
+      className="panel price-library"
+      aria-labelledby="price-library-heading"
+    >
+      <div className="editor-heading">
+        <div>
+          <div className="section-title">
+            <Database size={20} />
+            <h2 id="price-library-heading">
+              {management ? '管理价格库' : '价格数据库'}
+            </h2>
+          </div>
+          <p className="muted">
+            {management
+              ? '导入、编辑与停用价格表。个人价格仅自己可见。'
+              : '选择来源后自动匹配参考价格，点击采用加入成本明细。'}
+          </p>
+        </div>
+        <div className="price-actions">
+          {!management && (
+            <Link className="price-link" href="/prices">
+              管理 / 导入价格库
+            </Link>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setRevision((v) => v + 1)}
+            disabled={loading}
+          >
+            刷新
+          </Button>
+        </div>
+      </div>
+      <div className="two-fields">
+        <label className="field" htmlFor="price-source">
+          <span>价格来源</span>
+          <Select
+            items={[
+              { value: 'system', label: '系统价格库' },
+              { value: 'user', label: '我的价格库' },
+            ]}
+            value={source}
+            disabled={changing || importing}
+            onValueChange={(v) => v && selectSource(v as 'system' | 'user')}
+          >
+            <SelectTrigger id="price-source" aria-label="价格来源">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="system">系统价格库</SelectItem>
+              <SelectItem value="user">我的价格库</SelectItem>
+            </SelectContent>
+          </Select>
+        </label>
+        {!management && (
+          <label className="field" htmlFor="price-group">
+            <span>团体类型</span>
+            <Select
+              items={groupOptions}
+              value={group}
+              onValueChange={(v) => {
+                if (v)
+                  onPlan({
+                    ...plan,
+                    groupType: v as Plan['groupType'],
+                    billing: v === 'family' ? 'family' : 'person',
+                  });
+              }}
+            >
+              <SelectTrigger id="price-group" aria-label="团体类型">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {groupOptions.map((g) => (
+                  <SelectItem key={g.value} value={g.value}>
+                    {g.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        )}
+      </div>
+      {loading && <output>正在读取价格库…</output>}
+      {error && (
+        <p role="alert" className="error-box">
+          {error}
+        </p>
+      )}
+      {data?.needsLogin && <p>请先在页面上方登录，再导入和使用个人价格库。</p>}
+      {ready && !!data?.catalogs.length && (
+        <label className="field" htmlFor="price-catalog">
+          <span>价格表（最近 100 份）</span>
+          <Select
+            items={data.catalogs.map((c) => ({
+              value: c.id,
+              label: `${c.name} · v${c.version}${c.isActive ? '' : ' · 已停用'}`,
+            }))}
+            value={catalog?.id ?? ''}
+            disabled={importing || changing}
+            onValueChange={(v) => v && onPlan({ ...plan, priceCatalogId: v })}
+          >
+            <SelectTrigger id="price-catalog" aria-label="价格表">
+              <SelectValue placeholder="请选择价格表" />
+            </SelectTrigger>
+            <SelectContent>
+              {data.catalogs.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name} · v{c.version}
+                  {c.isActive ? '' : ' · 已停用'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+      )}
+      {!management && catalog && (
+        <>
+          <div className="two-fields">
+            <label className="field" htmlFor="price-project">
+              <span>景区 / 项目</span>
+              <Input
+                id="price-project"
+                list="price-project-options"
+                maxLength={80}
+                value={plan.priceProject ?? ''}
+                placeholder="留空仅显示通用价格"
+                onChange={(e) =>
+                  onPlan({ ...plan, priceProject: e.target.value })
+                }
+              />
+              <datalist id="price-project-options" aria-label="可用景区或项目">
+                {projects.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </datalist>
+            </label>
+            <label className="field" htmlFor="price-date">
+              <span>出行日期</span>
+              <Input
+                id="price-date"
+                type="date"
+                value={plan.travelDate ?? ''}
+                onChange={(e) =>
+                  onPlan({ ...plan, travelDate: e.target.value })
+                }
+              />
+            </label>
+          </div>
+          <p className="price-note">
+            人数范围按实际参与的 {population(plan).attendees}{' '}
+            人匹配。未填日期时，有有效期的价格不会显示。已有成本保留，请核对同类费用。
+          </p>
+          {plan.costs.some(
+            (c) =>
+              c.priceOrigin &&
+              (c.priceOrigin.travelDate !== (plan.travelDate ?? '') ||
+                c.priceOrigin.catalogId !== catalog.id),
+          ) && (
+            <p className="price-note">
+              部分成本来自其他价格表或出行日期，请核对已采用价格。
+            </p>
+          )}
+        </>
+      )}
+      {management && ready && (source === 'user' || data?.canManageSystem) && (
+        <div className="price-actions">
+          <Button
+            disabled={importing || changing}
+            onClick={() => {
+              setEditing(undefined);
+              setImporting(true);
+            }}
+          >
+            导入{source === 'system' ? '系统' : '个人'}价格表
+          </Button>
+          {catalog && (
+            <>
+              <Button
+                variant="outline"
+                disabled={importing || changing}
+                onClick={() => {
+                  setEditing(catalog);
+                  setImporting(true);
+                }}
+              >
+                编辑 / 更新价格表
+              </Button>
+              <Button
+                variant="outline"
+                disabled={importing || changing}
+                onClick={() => setPending(catalog)}
+              >
+                {catalog.isActive ? '停用' : '恢复'}价格表
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+      {pending && (
+        <div className="restore-prompt">
+          <p>
+            确认{pending.isActive ? '停用' : '恢复'}“{pending.name}”？
+            {pending.isActive
+              ? '停用后将不再推荐，历史估算保留原价格。'
+              : '恢复后将重新参与价格推荐。'}
+          </p>
+          <Button disabled={changing} onClick={toggle}>
+            确认
+          </Button>
+          <Button
+            variant="outline"
+            disabled={changing}
+            onClick={() => setPending(null)}
+          >
+            取消
+          </Button>
+        </div>
+      )}
+      {importing && (
+        <PriceImport
+          key={editing?.id ?? source}
+          source={source}
+          existing={editing}
+          onCancel={() => setImporting(false)}
+          onDone={(id) => {
+            setImporting(false);
+            setEditing(undefined);
+            onPlan({ ...plan, priceCatalogId: id });
+            setRevision((v) => v + 1);
+            setMessage('价格表已保存，可以返回测算页面采用价格。');
+          }}
+        />
+      )}
+      {message && <output className="history-message">{message}</output>}
+      {!management && ambiguous && (
+        <p className="price-note">
+          匹配到同名的不同价格，请逐项选择，避免自动采用不适合的报价。
+        </p>
+      )}
+      {catalog && !importing && (
+        <>
+          <div className="editor-heading">
+            <div>
+              <strong>
+                {catalog.name} · v{catalog.version}
+              </strong>
+              <p className="price-note">
+                {management
+                  ? `${catalog.items.length} 条价格`
+                  : `已匹配 ${eligible.length} 条价格`}{' '}
+                · 单价按整次活动填写
+              </p>
+            </div>
+            {!management && (
+              <Button
+                disabled={!eligible.length || ambiguous}
+                onClick={() => adopt(eligible)}
+              >
+                采用全部匹配价格
+              </Button>
+            )}
+          </div>
+          {(management ? catalog.items : eligible).length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>费用 / 适用项目</TableHead>
+                  <TableHead>计费方式</TableHead>
+                  <TableHead>参考单价 / 元</TableHead>
+                  <TableHead>有效期 / 备注</TableHead>
+                  {!management && <TableHead>操作</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(management ? catalog.items : eligible).map((i) => (
+                  <TableRow key={i.id}>
+                    <TableCell>
+                      <strong>{i.name}</strong>
+                      <small>
+                        {i.category} ·{' '}
+                        {
+                          groupOptions.find((g) => g.value === i.groupType)
+                            ?.label
+                        }{' '}
+                        · {i.projectName || '通用'}
+                      </small>
+                    </TableCell>
+                    <TableCell>
+                      {modeLabel(i.mode)}
+                      {i.mode === 'fixed'
+                        ? ` × ${i.quantity}`
+                        : i.mode === 'batch'
+                          ? `（${i.capacity} 人/批）`
+                          : ''}
+                    </TableCell>
+                    <TableCell>¥{money(i.amount)}</TableCell>
+                    <TableCell>
+                      {i.validFrom || '不限'} 至 {i.validTo || '不限'}
+                      <small>{i.note || '—'}</small>
+                    </TableCell>
+                    {!management && (
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => adopt([i])}
+                        >
+                          采用
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="history-empty">
+              暂无匹配价格。请核对团型、项目、日期或人数，也可以切换价格库。
+            </p>
+          )}
+        </>
+      )}
+      {ready && !data?.catalogs.length && !data?.needsLogin && (
+        <p className="history-empty">还没有价格表，请先导入。</p>
+      )}
+    </section>
+  );
 }

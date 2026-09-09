@@ -11,7 +11,7 @@
     "start": "vinext start",
     "lint": "oxlint",
     "format": "oxfmt",
-    "test": "node tests/pricing.test.mjs && node tests/storage.test.mjs && node tests/auth.test.mjs",
+    "test": "node tests/pricing.test.mjs && node tests/storage.test.mjs && node tests/auth.test.mjs && node tests/price-library.test.mjs",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "build:pages": "pnpm build && node scripts/package-pages.mjs"
@@ -33,6 +33,7 @@
     "react-dom": "19.2.6",
     "react-resizable-panels": "4.5.8",
     "react-server-dom-webpack": "19.2.6",
+    "read-excel-file": "^9.3.10",
     "recharts": "3.8.0",
     "shadcn": "4.18.0",
     "tailwind-merge": "3.6.0",
