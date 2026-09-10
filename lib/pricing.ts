@@ -1,8 +1,10 @@
-export type Cost = { id:string; name:string; mode:'fixed'|'person'|'batch'|'adult'|'child'|'family'; amount:number; quantity:number; capacity:number; actualOnly:boolean };
-export type Plan = {paying:number; free:number; price:number; tax:number; target:number; costs:Cost[]; billing?:'person'|'family'; adultsPerFamily?:number; childrenPerFamily?:number; commission?:number; reserve?:number};
+export type GroupType='student'|'family'|'senior'|'adult'|'company'|'custom';
+export type PriceOrigin={catalogId:string;catalogName:string;itemId:string;source:'system'|'user';version:number;unitPrice:number;adoptedAt:string;projectName:string;travelDate:string};
+export type Cost = { id:string; name:string; mode:'fixed'|'person'|'batch'|'adult'|'child'|'family'; amount:number; quantity:number; capacity:number; actualOnly:boolean; priceOrigin?:PriceOrigin };
+export type Plan = {paying:number; free:number; price:number; tax:number; target:number; costs:Cost[]; groupType?:GroupType; billing?:'person'|'family'; adultsPerFamily?:number; childrenPerFamily?:number; commission?:number; reserve?:number;priceProject?:string;travelDate?:string;priceSource?:'system'|'user';priceCatalogId?:string};
 export const unit=(p:Plan)=>p.billing==='family'?'组':'人';
-export function population(p:Plan,paying=p.paying){const family=p.billing==='family';const adults=family?paying*(p.adultsPerFamily??1)+p.free:p.free;const children=family?paying*(p.childrenPerFamily??1):paying;return {adults,children,families:family?paying:0,attendees:adults+children};}
-export const demo:Plan={paying:40,free:2,price:298,tax:0,target:25,costs:[
+export function population(p:Plan,paying=p.paying){const family=p.billing==='family';const adultGroup=['adult','senior','company'].includes(p.groupType??'student');const adults=family?paying*(p.adultsPerFamily??1)+p.free:adultGroup?paying+p.free:p.free;const children=family?paying*(p.childrenPerFamily??1):adultGroup?0:paying;return {adults,children,families:family?paying:0,attendees:adults+children};}
+export const demo:Plan={groupType:'student',paying:40,free:2,price:298,tax:0,target:25,costs:[
 {id:'1',name:'课程与场地',mode:'fixed',amount:1600,quantity:1,capacity:1,actualOnly:false},
 {id:'2',name:'往返大巴',mode:'batch',amount:1200,quantity:1,capacity:50,actualOnly:false},
 {id:'3',name:'研学材料包',mode:'person',amount:38,quantity:1,capacity:1,actualOnly:false},
@@ -13,6 +15,7 @@ export const demo:Plan={paying:40,free:2,price:298,tax:0,target:25,costs:[
 ]};
 export function validate(p:Plan){
 const errors:string[]=[];
+if(p.groupType!==undefined&&!['student','family','senior','adult','company','custom'].includes(p.groupType))errors.push('团体类型无效');
 if(p.billing!==undefined&&!['person','family'].includes(p.billing))errors.push('收费模式无效');
 for(const [name,n] of [['每组成人',p.adultsPerFamily??1],['每组儿童',p.childrenPerFamily??1]] as const)if(!Number.isInteger(n)||n<1||n>10)errors.push(name+'须为 1–10 的整数');
 for(const [name,n] of [['渠道佣金',p.commission??0],['成本预备金',p.reserve??0]] as const)if(!Number.isFinite(n)||n<0||n>100)errors.push(name+'须为 0–100%');

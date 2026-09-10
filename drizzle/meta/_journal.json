@@ -15,6 +15,20 @@
       "when": 1788847324323,
       "tag": "0001_milky_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788923135609,
+      "tag": "0002_price_library",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788923638566,
+      "tag": "0003_price_library_versions",
+      "breakpoints": true
     }
   ]
 }
