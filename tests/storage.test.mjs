@@ -46,5 +46,25 @@ try{
  assert.deepEqual((await (await call('alice','?id='+familyRecord.id)).json()).plan,familyRecord.plan);
  const familyList=await (await call('alice','?q='+encodeURIComponent('亲子'))).json();assert.equal(familyList.items[0].billing,'family');
  assert.equal((await post({...familyRecord,id:crypto.randomUUID(),plan:{...familyRecord.plan,adultsPerFamily:'2'}})).status,400);
+ const mutate=(method,body,user='alice',origin='https://pricing.test',id=record.id)=>estimateRequest(new Request(endpoint+(method==='DELETE'?'?id='+id:''),{method,headers:{Origin:origin,'Content-Type':'application/json'},...(method==='PUT'?{body:JSON.stringify(body)}:{})}),user,()=>db);
+ const changed={...record,title:'修改后的项目',plan:{...demo,price:399}};
+ for(const method of ['PUT','DELETE']){
+  assert.equal((await mutate(method,changed,null)).status,401);
+  assert.equal((await mutate(method,changed,'alice','https://evil.test')).status,403);
+  assert.equal((await mutate(method,changed,'bob')).status,404);
+ }
+ assert.equal((await mutate('PUT',{...changed,plan:{}})).status,400);
+ assert.equal((await mutate('PUT',changed)).status,200);
+ assert.equal((await mutate('PUT',changed)).status,200);
+ const updated=await (await call('alice','?id='+record.id)).json();
+ assert.equal(updated.createdAt,restored.createdAt);assert.equal(updated.title,changed.title);assert.deepEqual(updated.plan,changed.plan);
+ const updatedList=await (await call('alice','?q='+encodeURIComponent(changed.title))).json();assert.equal(updatedList.items.length,1);assert.equal(updatedList.items[0].price,399);
+ const {exportEstimate}=await import('../lib/estimate-export.ts');
+ const exported=exportEstimate(updated);assert.deepEqual(JSON.parse(exported.content).plan,changed.plan);assert.equal(JSON.parse(exported.content).summary.revenue,15960);
+ assert.ok(!/[<>:"/\\|?*]/.test(exportEstimate({...updated,title:'测试/非法:名称'}).filename));
+ assert.deepEqual(JSON.parse(exportEstimate({...familyRecord,createdAt:updated.createdAt}).content).plan,familyRecord.plan);
+ assert.equal((await mutate('DELETE')).status,200);assert.equal((await call('alice','?id='+record.id)).status,404);
+ assert.equal((await mutate('DELETE')).status,404);assert.equal((await mutate('PUT',changed)).status,404);
+ assert.equal((await call('alice','?id='+familyRecord.id)).status,200);
  console.log('Passed: SQLite migration, persistence after reopen, owner isolation, authentication, CSRF, malformed data, retry idempotency, search, pagination and outage response.');
 }finally{sqlite.close();rmSync(dir,{recursive:true,force:true});}

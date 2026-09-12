@@ -4,12 +4,21 @@ const reply=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cach
 export async function estimateRequest(request:Request,owner:string|null,db:()=>D1Database){
  if(!owner)return reply({error:'请先登录，再保存或查询自己的项目'},401);
  const url=new URL(request.url);
- if(request.method==='POST'){
+ if(['POST','PUT','DELETE'].includes(request.method)&&request.headers.get('Origin')!==url.origin)return reply({error:'请求来源无效，请刷新页面后重试'},403);
+ if(request.method==='DELETE'){
+ const id=url.searchParams.get('id');if(!id)return reply({error:'记录编号无效'},400);
+ try{const row=await db().prepare('DELETE FROM estimates WHERE id = ? AND owner_id = ? RETURNING id').bind(id,owner).first();return row?reply({deleted:true}):reply({error:'找不到这条项目记录'},404);}catch{return reply({error:'删除失败，请稍后重试'},503);}
+ }
+ if(request.method==='POST'||request.method==='PUT'){
  if(request.headers.get('Origin')!==url.origin)return reply({error:'请求来源无效，请刷新页面后重试'},403);
  if(!request.headers.get('content-type')?.startsWith('application/json'))return reply({error:'请求格式无效'},415);
  let value;try{const reader=request.body?.getReader();let raw='';let size=0;const decoder=new TextDecoder();if(reader){while(true){const chunk=await reader.read();if(chunk.done)break;size+=chunk.value.byteLength;if(size>262144){await reader.cancel();return reply({error:'记录过大，请减少成本明细'},413);}raw+=decoder.decode(chunk.value,{stream:true});}raw+=decoder.decode();}value=parseEstimate(JSON.parse(raw));}catch(e){return reply({error:e instanceof Error?e.message:'估算格式无效'},400)}
  try{
  const database=db();const now=new Date().toISOString();
+ if(request.method==='PUT'){
+ const row=await database.prepare('UPDATE estimates SET title = ?, plan_json = ? WHERE id = ? AND owner_id = ? RETURNING id, created_at').bind(value.title,JSON.stringify(value.plan),value.id,owner).first<{id:string;created_at:string}>();
+ return row?reply({id:row.id,createdAt:row.created_at}):reply({error:'找不到这条项目记录，可能已被删除'},404);
+ }
  await database.prepare('INSERT INTO estimates (id, owner_id, title, plan_json, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING').bind(value.id,owner,value.title,JSON.stringify(value.plan),now).run();
  const row=await database.prepare('SELECT id, title, plan_json, created_at FROM estimates WHERE id = ? AND owner_id = ?').bind(value.id,owner).first<{id:string;title:string;plan_json:string;created_at:string}>();
  if(!row||row.title!==value.title||row.plan_json!==JSON.stringify(value.plan))return reply({error:'记录编号冲突，请重新保存'},409);
