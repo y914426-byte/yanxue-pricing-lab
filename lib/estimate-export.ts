@@ -39,6 +39,6 @@ export async function exportEstimate(saved:{id:string;title:string;createdAt:str
   {sheet:'估算概览',data:overview,columns:[{width:28},{width:72}],showGridLines:false},
   {sheet:'成本明细',data:details,columns:[32,20,18,14,14,18,20,22,28,16,18,14,28,28,20,36,36].map(width=>({width})),showGridLines:false}
  ],{fontFamily:'Microsoft YaHei',fontSize:11}).toBlob();
- const filename=(value.title.replace(/[<>:"/\\|?*\u0000-\u001f]/g,'_').replace(/[. ]+$/g,'')||'历史估算').slice(0,80)+'-估算.xlsx';
+ const filename=(Array.from(value.title, character => character.charCodeAt(0) < 32 ? '_' : character).join('').replace(/[<>:"/\\|?*]/g,'_').replace(/[. ]+$/g,'')||'历史估算').slice(0,80)+'-估算.xlsx';
  return {filename,content};
 }

@@ -4,7 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readdirSync,readFileSync} from 'node:fs';
 import {generateKeyPair,exportJWK,createLocalJWKSet,SignJWT} from 'jose';
 registerHooks({resolve(s,c,next){try{return next(s,c)}catch(e){if(s.startsWith('./')&&c.parentURL?.includes('/lib/'))return next(s+'.ts',c);throw e;}}});
-const {googleAuthRequest,getGoogleUser,verifyGoogleCredential,logoutRequest,cookieName,hashToken}=await import('../lib/google-auth.ts');
+const {googleAuthRequest,getGoogleUser,verifyGoogleCredential,logoutRequest,cookieName:_cookieName,hashToken}=await import('../lib/google-auth.ts');
 const {importLegacyRecords}=await import('../lib/account-import.ts');
 const sqlite=new DatabaseSync(':memory:');
 for(const f of readdirSync(new URL('../drizzle/',import.meta.url)).filter(x=>x.endsWith('.sql')))sqlite.exec(readFileSync(new URL('../drizzle/'+f,import.meta.url),'utf8'));

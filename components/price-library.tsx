@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -187,9 +188,9 @@ export function PriceLibrary({
         </div>
         <div className="price-actions">
           {!management && (
-            <a className="price-link" href="/prices">
+            <Link className="price-link" href="/prices">
               管理 / 导入价格库
-            </a>
+            </Link>
           )}
           <Button
             variant="outline"

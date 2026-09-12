@@ -47,3 +47,12 @@ body{font-family:'Inter','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;-
 .price-library output{display:block;margin:12px 0;font-size:14px}
 
 .history-actions{grid-column:1/-1;display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}.history-actions button{font-size:12px;border-radius:8px}.history-actions .history-delete{color:#b42318}.history-actions .history-delete:hover{background:#fff1f0}@media(max-width:520px){.history-actions{display:grid;grid-template-columns:1fr 1fr}.history-actions button{min-height:38px}}
+
+.scheme-workspace { max-width: 1000px; }
+.scheme-panel { padding: 24px; margin-bottom: 20px; min-width: 0; overflow-wrap: anywhere; }
+.scheme-panel h2 { margin-bottom: 12px; }
+.scheme-panel p { margin: 12px 0; }
+.scheme-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 16px 0; }
+.scheme-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.8; padding: 16px; background: #f7f9fa; border-radius: 8px; max-height: 65vh; overflow: auto; margin: 16px 0; }
+.scheme-panel input[type=file] { max-width: 100%; }
+@media (max-width: 600px) { .scheme-panel { padding: 16px; } .scheme-actions { gap: 12px; } }

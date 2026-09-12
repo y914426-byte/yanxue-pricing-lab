@@ -22,3 +22,9 @@ export const priceItems=sqliteTable('price_items',{
  projectName:text('project_name').notNull().default(''),validFrom:text('valid_from').notNull().default(''),validTo:text('valid_to').notNull().default(''),
  id:text('id').primaryKey(),catalogId:text('catalog_id').notNull(),groupType:text('group_type').notNull(),category:text('category').notNull(),name:text('name').notNull(),mode:text('mode').notNull(),amount:real('amount').notNull(),quantity:real('quantity').notNull().default(1),capacity:integer('capacity').notNull().default(1),minPeople:integer('min_people').notNull().default(0),maxPeople:integer('max_people').notNull().default(10000),actualOnly:integer('actual_only',{mode:'boolean'}).notNull().default(false),note:text('note').notNull().default(''),sortOrder:integer('sort_order').notNull().default(0),
 },t=>[index('idx_price_items_catalog_group').on(t.catalogId,t.groupType,t.sortOrder)]);
+
+export const schemeDocuments = sqliteTable('scheme_documents', {
+ id: text('id').primaryKey(), ownerId: text('owner_id').notNull(), title: text('title').notNull(),
+ fileName: text('file_name').notNull(), fileType: text('file_type').notNull(), rawText: text('raw_text').notNull(),
+ createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(),
+}, t => [index('idx_scheme_documents_owner_created').on(t.ownerId, t.createdAt, t.id)]);
