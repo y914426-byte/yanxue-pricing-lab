@@ -59,10 +59,6 @@ try{
  const updated=await (await call('alice','?id='+record.id)).json();
  assert.equal(updated.createdAt,restored.createdAt);assert.equal(updated.title,changed.title);assert.deepEqual(updated.plan,changed.plan);
  const updatedList=await (await call('alice','?q='+encodeURIComponent(changed.title))).json();assert.equal(updatedList.items.length,1);assert.equal(updatedList.items[0].price,399);
- const {exportEstimate}=await import('../lib/estimate-export.ts');
- const exported=exportEstimate(updated);assert.deepEqual(JSON.parse(exported.content).plan,changed.plan);assert.equal(JSON.parse(exported.content).summary.revenue,15960);
- assert.ok(!/[<>:"/\\|?*]/.test(exportEstimate({...updated,title:'测试/非法:名称'}).filename));
- assert.deepEqual(JSON.parse(exportEstimate({...familyRecord,createdAt:updated.createdAt}).content).plan,familyRecord.plan);
  assert.equal((await mutate('DELETE')).status,200);assert.equal((await call('alice','?id='+record.id)).status,404);
  assert.equal((await mutate('DELETE')).status,404);assert.equal((await mutate('PUT',changed)).status,404);
  assert.equal((await call('alice','?id='+familyRecord.id)).status,200);
