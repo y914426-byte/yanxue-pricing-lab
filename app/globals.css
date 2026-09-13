@@ -142,3 +142,49 @@ body{font-family:'Inter','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;-
   .scheme-costing-footer button { width: 100%; }
 }
 
+.costing-edit-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.costing-edit-toolbar > span { color: var(--muted-foreground); font-size: 13px; flex: 1; min-width: 260px; }
+.costing-edit-input,.costing-edit-number,.costing-edit-select { width: 100%; min-width: 120px; border: 1px solid var(--border); border-radius: 7px; background: #fff; color: var(--foreground); padding: 7px 8px; font: inherit; }
+.costing-edit-input { min-width: 170px; }
+.costing-edit-number { min-width: 90px; }
+.costing-edit-select { margin-bottom: 6px; }
+.costing-edit-input:disabled,.costing-edit-number:disabled,.costing-edit-select:disabled { background: #f2f4f8; color: var(--muted-foreground); }
+.costing-removed { background: #fafafa; color: var(--muted-foreground); }
+.costing-removed .costing-edit-input { text-decoration: line-through; }
+.costing-add-form { margin-top: 16px; padding: 18px; border: 1px solid var(--border); border-radius: 10px; background: #f7f9fd; }
+.costing-add-form h3 { margin-bottom: 12px; font-size: 15px; }
+.costing-add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.costing-add-grid label,.alias-form label { display: flex; flex-direction: column; gap: 6px; color: var(--muted-foreground); font-size: 13px; }
+.costing-add-grid input,.costing-add-grid select,.alias-form input { min-height: 38px; border: 1px solid var(--border); border-radius: 7px; background: #fff; padding: 7px 9px; color: var(--foreground); font: inherit; }
+.costing-add-wide { grid-column: 1 / -1; }
+.learning-suggestions { margin-top: 18px; padding: 16px; border: 1px solid #e8dcbd; border-radius: 10px; background: #fffaf0; }
+.learning-suggestions .section-title { margin-bottom: 12px; }
+.learning-suggestion-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.learning-suggestion-grid article { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 12px; background: #fff; border-radius: 8px; border: 1px solid #f0e6cf; }
+.learning-suggestion-grid small,.learning-table small,.batch-list small,.alias-list small { display: block; margin-top: 4px; color: var(--muted-foreground); line-height: 1.45; }
+.learning-suggestion-grid article > div { min-width: 0; }
+.learning-suggestion-grid article strong { overflow-wrap: anywhere; }
+.learning-center-link { margin-top: 18px; text-align: right; font-size: 13px; }
+.learning-center-link a { color: var(--primary); text-decoration: none; }
+.learning-workspace { max-width: 1240px; }
+.learning-intro p { color: var(--muted-foreground); line-height: 1.7; margin-top: 8px; }
+.learning-table { min-width: 900px; }
+.learning-table td,.learning-table th { padding: 12px 10px; vertical-align: top; }
+.learning-table th { background: #f6f8fc; color: var(--muted-foreground); font-size: 13px; text-align: left; }
+.knowledge-name-input { width: 220px; max-width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 7px 8px; font: inherit; }
+.learning-disabled { opacity: .72; }
+.learning-level { display: inline-flex; border-radius: 999px; padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+.learning-high { background: #e7f5ef; color: #20775d; }
+.learning-low { background: #fff4df; color: #986319; }
+.knowledge-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.alias-form { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 12px; margin-top: 16px; }
+.alias-list,.batch-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.alias-list > div,.batch-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: #f7f9fd; border-radius: 8px; }
+.batch-list > div > span { min-width: 0; }
+@media (max-width: 800px) {
+  .costing-add-grid,.learning-suggestion-grid,.alias-form { grid-template-columns: 1fr; }
+  .costing-add-wide { grid-column: auto; }
+  .learning-suggestion-grid article { align-items: flex-start; flex-direction: column; }
+  .alias-form button { width: 100%; }
+}
+

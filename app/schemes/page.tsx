@@ -85,12 +85,15 @@ export default function Schemes() {
         <Link className="price-link" href="/">
           ← 返回研学定价台
         </Link>
-        <Link className="price-link" href="/scheme-import">
-          导入研学方案
-        </Link>
-        <Link className="price-link" href="/schemes">
-          我的方案
-        </Link>
+          <Link className="price-link" href="/scheme-import">
+            导入研学方案
+          </Link>
+          <Link className="price-link" href="/learning">
+            成本知识库
+          </Link>
+          <Link className="price-link" href="/schemes">
+            我的方案
+          </Link>
       </nav>
       <div className="page-title">
         <h1>{detail ? '方案详情' : '我的方案'}</h1>

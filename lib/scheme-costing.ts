@@ -1,5 +1,10 @@
 import { costTotal, type Cost } from './pricing';
 import type { SchemeAnalysis } from './scheme-analysis-schema';
+import {
+  normalizeLearningCostName,
+  type CostingSource,
+  type LearningSuggestion,
+} from './scheme-learning';
 
 export const PRICE_SOURCES = ['system', 'personal', 'personal_first'] as const;
 export type PriceSource = (typeof PRICE_SOURCES)[number];
@@ -13,6 +18,17 @@ export type MatchStatus =
   | 'info_insufficient';
 export type MatchDecision = 'auto' | 'accepted' | 'rejected' | 'none';
 export type MatchQuality = 'exact' | 'normalized' | 'suggested' | 'manual';
+
+export type CostingCandidateMeta = {
+  key: string;
+  origin: CostingSource;
+  originalName: string;
+  removed?: boolean;
+  removalAction?: 'removed' | 'not_applicable';
+  note?: string;
+};
+
+export type PricePreferenceCounts = Record<string, Record<string, number>>;
 
 export type AvailablePriceItem = {
   id: string;
@@ -65,7 +81,13 @@ export type PriceOption = {
 };
 
 export type SchemeCostMatch = {
+  key: string;
   candidateIndex: number;
+  origin: CostingSource;
+  originalName: string;
+  removed: boolean;
+  removalAction: 'removed' | 'not_applicable' | null;
+  note: string;
   name: string;
   normalizedName: string;
   category: string;
@@ -114,7 +136,9 @@ export type SchemeCostingResult = {
     multiple: number;
     unmatched: number;
     infoInsufficient: number;
+    removed: number;
   };
+  historySuggestions: LearningSuggestion[];
   allRequiredResolved: boolean;
   knownPerPerson: number | null;
   warnings: string[];
@@ -435,6 +459,8 @@ function matchOne(
   groupType: Exclude<SchemeAnalysis['summary']['groupType'], 'unknown'> | null,
   facts: PopulationFacts,
   decisions: Record<string, string | null>,
+  meta: CostingCandidateMeta | undefined,
+  pricePreferenceCounts: PricePreferenceCounts,
 ): SchemeCostMatch {
   const evaluated = items
     .filter((item) =>
@@ -447,13 +473,24 @@ function matchOne(
     .map((item) => evaluate(candidate, item, analysis, groupType, facts))
     .filter((item): item is Evaluated => !!item);
   const prioritized = sourcePriority(evaluated, source).sort(
-    (a, b) => b.option.score - a.option.score || a.item.id.localeCompare(b.item.id),
+    (a, b) =>
+      b.option.score - a.option.score ||
+      (pricePreferenceCounts[normalizeLearningCostName(candidate.name)]?.[b.item.id] ?? 0) -
+        (pricePreferenceCounts[normalizeLearningCostName(candidate.name)]?.[a.item.id] ?? 0) ||
+      a.item.id.localeCompare(b.item.id),
   );
-  const explicitDecision = Object.prototype.hasOwnProperty.call(decisions, String(index))
-    ? decisions[String(index)]
+  const decisionKey = meta?.key ?? String(index);
+  const explicitDecision = Object.prototype.hasOwnProperty.call(decisions, decisionKey)
+    ? decisions[decisionKey]
     : undefined;
   const base = {
+    key: meta?.key ?? String(index),
     candidateIndex: index,
+    origin: meta?.origin ?? (candidate.source === 'explicit' ? 'scheme_explicit' : 'ai_suggestion'),
+    originalName: meta?.originalName ?? candidate.name,
+    removed: false,
+    removalAction: null,
+    note: meta?.note ?? '',
     name: candidate.name,
     normalizedName: candidate.normalizedName,
     category: candidate.category,
@@ -471,6 +508,17 @@ function matchOne(
     decision: 'none' as MatchDecision,
     matchQuality: null,
   };
+  if (meta?.removed) {
+    return {
+      ...base,
+      removed: true,
+      removalAction: meta.removalAction ?? 'not_applicable',
+      status: 'unmatched',
+      decision: 'rejected',
+      reason: meta.removalAction === 'removed' ? '用户已删除此成本项目。' : '用户已标记此成本本次不适用。',
+      options: [],
+    };
+  }
   if (explicitDecision === null) {
     return {
       ...base,
@@ -574,25 +622,42 @@ export function costScheme(
   source: PriceSource,
   decisions: Record<string, string | null> = {},
   groupTypeOverride?: Exclude<SchemeAnalysis['summary']['groupType'], 'unknown'>,
+  options: {
+    candidateMeta?: Record<number, CostingCandidateMeta>;
+    pricePreferenceCounts?: PricePreferenceCounts;
+    historySuggestions?: LearningSuggestion[];
+  } = {},
 ): SchemeCostingResult {
   const analysisGroup = analysis.summary.groupType === 'unknown' ? null : analysis.summary.groupType;
   const groupType = groupTypeOverride ?? analysisGroup;
   const groupTypeSource = groupTypeOverride ? 'manual' : analysisGroup ? 'analysis' : 'unknown';
   const participants = populationFacts(analysis, groupType);
   const items = analysis.costCandidates.map((candidate, index) =>
-    matchOne(candidate, index, analysis, availableItems, source, groupType, participants, decisions),
+    matchOne(
+      candidate,
+      index,
+      analysis,
+      availableItems,
+      source,
+      groupType,
+      participants,
+      decisions,
+      options.candidateMeta?.[index],
+      options.pricePreferenceCounts ?? {},
+    ),
   );
   const knownCostTotal = items.reduce((sum, item) => sum + (item.total ?? 0), 0);
   const counts = {
-    matched: items.filter((item) => item.total !== null).length,
-    suggested: items.filter((item) => item.status === 'suggested').length,
-    multiple: items.filter((item) => item.status === 'multiple').length,
-    unmatched: items.filter((item) => item.status === 'unmatched').length,
-    infoInsufficient: items.filter((item) => item.status === 'info_insufficient').length,
+    matched: items.filter((item) => !item.removed && item.total !== null).length,
+    suggested: items.filter((item) => !item.removed && item.status === 'suggested').length,
+    multiple: items.filter((item) => !item.removed && item.status === 'multiple').length,
+    unmatched: items.filter((item) => !item.removed && item.status === 'unmatched').length,
+    infoInsufficient: items.filter((item) => !item.removed && item.status === 'info_insufficient').length,
+    removed: items.filter((item) => item.removed).length,
   };
-  const unresolvedCount = items.filter((item) => item.total === null).length;
+  const unresolvedCount = items.filter((item) => !item.removed && item.total === null).length;
   const allRequiredResolved = items.every(
-    (item) => item.requiredness !== 'required' || item.total !== null,
+    (item) => item.removed || item.requiredness !== 'required' || item.total !== null,
   );
   return {
     schemaVersion: 1,
@@ -607,6 +672,7 @@ export function costScheme(
     knownCostTotal,
     unresolvedCount,
     counts,
+    historySuggestions: options.historySuggestions ?? [],
     allRequiredResolved,
     knownPerPerson:
       participants.attendees && participants.attendees > 0
