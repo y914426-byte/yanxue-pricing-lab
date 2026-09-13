@@ -89,6 +89,7 @@ export function SchemeAnalysisPanel({ schemeId }: { schemeId: string }) {
           data.error || '智能分析暂时失败，原方案没有受到影响，请稍后重试。',
         );
       setAnalysis(data.analysis);
+      window.dispatchEvent(new CustomEvent('scheme-analysis-updated', { detail: { schemeId } }));
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -233,4 +234,3 @@ export function SchemeAnalysisPanel({ schemeId }: { schemeId: string }) {
     </section>
   );
 }
-

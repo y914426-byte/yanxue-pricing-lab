@@ -387,7 +387,7 @@ function editedAnalysis(
   };
 }
 
-function parseStoredResult(row: CostingRow) {
+function parseStoredResult(row: CostingRow, latestAnalysisId: string) {
   const result = JSON.parse(row.match_json) as SchemeCostingResult;
   return {
     id: row.id,
@@ -398,6 +398,8 @@ function parseStoredResult(row: CostingRow) {
     costing: result,
     knownCostTotal: row.known_cost_total,
     unresolvedCount: row.unresolved_count,
+    stale: row.scheme_analysis_id !== latestAnalysisId,
+    latestSchemeAnalysisId: latestAnalysisId,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -476,8 +478,8 @@ export async function schemeCostingRequest(request: Request, owner: string | nul
     if (request.method === 'GET') {
       const row = await db.prepare('SELECT * FROM scheme_cost_estimates WHERE scheme_document_id = ? AND owner_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1').bind(schemeId, owner).first<CostingRow>();
       return row
-        ? reply({ ...parseStoredResult(row), historySuggestions })
-        : reply({ costing: null, schemeId, schemeAnalysisId: analysisRow.id, priceSource: null, historySuggestions });
+        ? reply({ ...parseStoredResult(row, analysisRow.id), historySuggestions })
+        : reply({ costing: null, schemeId, schemeAnalysisId: analysisRow.id, latestSchemeAnalysisId: analysisRow.id, stale: false, priceSource: null, historySuggestions });
     }
     const items = await loadAvailableItems(db, owner, source);
     const preferenceCounts = await loadPricePreferences(db, owner);
@@ -492,9 +494,8 @@ export async function schemeCostingRequest(request: Request, owner: string | nul
     await db.prepare(`INSERT INTO scheme_cost_estimates
       (id, owner_id, scheme_document_id, scheme_analysis_id, price_source, match_json, known_cost_total, unresolved_count, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, owner, schemeId, analysisRow.id, source, JSON.stringify(result), result.knownCostTotal, result.unresolvedCount, now, now).run();
-    return reply({ id, schemeId, schemeAnalysisId: analysisRow.id, priceSource: source, costing: result, knownCostTotal: result.knownCostTotal, unresolvedCount: result.unresolvedCount, createdAt: now, updatedAt: now }, 201);
+    return reply({ id, schemeId, schemeAnalysisId: analysisRow.id, latestSchemeAnalysisId: analysisRow.id, stale: false, priceSource: source, costing: result, knownCostTotal: result.knownCostTotal, unresolvedCount: result.unresolvedCount, createdAt: now, updatedAt: now }, 201);
   } catch {
     return reply({ error: '成本匹配服务暂不可用，请稍后重试' }, 503);
   }
 }
-

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { SchemeAccount } from '@/components/scheme-account';
 import { SchemeAnalysisPanel } from '@/components/scheme-analysis';
 import { SchemeCostingPanel } from '@/components/scheme-costing';
+import { SchemeWorkflow } from '@/components/scheme-workflow';
 import { Button } from '@/components/ui/button';
 import type { SchemeSummary, SchemeDocument } from '@/lib/scheme-input';
 export default function Schemes() {
@@ -117,6 +118,7 @@ export default function Schemes() {
               {detail.fileName} ·{' '}
               {new Date(detail.createdAt).toLocaleString('zh-CN')}
             </p>
+            <SchemeWorkflow schemeId={detail.id} />
             <pre className="scheme-text">{detail.rawText}</pre>
             <SchemeAnalysisPanel schemeId={detail.id} />
             <SchemeCostingPanel schemeId={detail.id} />
@@ -180,4 +182,3 @@ export default function Schemes() {
     </main>
   );
 }
-

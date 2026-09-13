@@ -285,6 +285,11 @@ async function loadEstimate(db: D1Database, owner: string, schemeId: string, est
   return await db.prepare('SELECT id, scheme_document_id, scheme_analysis_id, owner_id, match_json FROM scheme_cost_estimates WHERE scheme_document_id = ? AND owner_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1').bind(schemeId, owner).first<CostingRow>();
 }
 
+async function loadLatestAnalysisId(db: D1Database, owner: string, schemeId: string) {
+  const row = await db.prepare('SELECT id FROM scheme_analyses WHERE scheme_document_id = ? AND owner_id = ? ORDER BY created_at DESC, id DESC LIMIT 1').bind(schemeId, owner).first<{ id: string }>();
+  return row?.id ?? null;
+}
+
 async function learningSummary(db: D1Database, owner: string, schemeId: string | null) {
   const rows = await currentTemplates(db, owner);
   const feedback = await feedbackRows(db, owner);
@@ -337,6 +342,9 @@ async function confirmLearning(db: D1Database, owner: string, body: Record<strin
   const requestedEstimate = optionalString(body.schemeCostEstimateId, '成本匹配编号');
   const estimate = await loadEstimate(db, owner, schemeId, requestedEstimate);
   if (!estimate) return reply({ error: '成本匹配记录不存在或无权访问' }, 404);
+  const latestAnalysisId = await loadLatestAnalysisId(db, owner, schemeId);
+  if (!latestAnalysisId || estimate.scheme_analysis_id !== latestAnalysisId)
+    return reply({ error: '方案已重新分析，请先重新匹配价格。', code: 'COSTING_STALE' }, 409);
   const previous = await db.prepare('SELECT confirmation_batch_id FROM scheme_confirmed_costs WHERE owner_id = ? AND scheme_cost_estimate_id = ? AND revoked_at IS NULL LIMIT 1').bind(owner, estimate.id).first();
   if (previous) return reply({ error: '本次成本匹配已经确认过；如有修改，请先保存新的成本匹配结果' }, 409);
   const stored = parseStoredPayload(estimate);
@@ -478,4 +486,3 @@ export async function schemeLearningRequest(request: Request, owner: string | nu
     return reply({ error: error instanceof Error ? error.message : '个人知识库服务暂不可用，请稍后重试' }, 503);
   }
 }
-
