@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { SchemeLink as Link } from '@/components/scheme-link';
 import { useSearchParams } from 'next/navigation';
 import { SchemeAccount } from '@/components/scheme-account';
 import { Button } from '@/components/ui/button';

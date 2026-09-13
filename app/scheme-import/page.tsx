@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
-import Link from 'next/link';
+import { SchemeLink as Link } from '@/components/scheme-link';
 import { SchemeAccount } from '@/components/scheme-account';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useMemo,useRef,useState} from 'react';
-import Link from 'next/link';
+import { SchemeLink as Link } from '@/components/scheme-link';
 import {flushSync} from 'react-dom';
 import {Calculator,ArrowUpRight,Users,Info,Plus,Trash2,Check,ArrowRight,Undo2,CircleDollarSign,Wallet,TrendingUp} from 'lucide-react';
 import {Input} from '@/components/ui/input';
