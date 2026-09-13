@@ -19,9 +19,11 @@ export async function parseSchemeFile(file: File): Promise<SchemeInput> {
     const bytes = await file.arrayBuffer();
     if (new Uint8Array(bytes)[0] !== 0x50 || new Uint8Array(bytes)[1] !== 0x4b)
       throw new Error('文件不是有效的 DOCX 文档');
+    // Vite's explicit asset URL avoids SSR file:// import.meta.url in Pages.
+    const { default: workerUrl } = await import('./scheme-parser.worker?worker&url');
     rawText = await new Promise<string>((resolve, reject) => {
       const worker = new Worker(
-        new URL('./scheme-parser.worker.ts', import.meta.url),
+        new URL(workerUrl, window.location.origin),
         { type: 'module' },
       );
       const finish = () => {

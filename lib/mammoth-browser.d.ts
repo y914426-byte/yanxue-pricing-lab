@@ -3,3 +3,8 @@ declare module 'mammoth/mammoth.browser' {
     arrayBuffer: ArrayBuffer;
   }): Promise<{ value: string }>;
 }
+
+declare module '*?worker&url' {
+  const url: string;
+  export default url;
+}
