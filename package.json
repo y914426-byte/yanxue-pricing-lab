@@ -11,7 +11,7 @@
     "start": "vinext start",
     "lint": "oxlint",
     "format": "oxfmt",
-    "test": "node tests/pricing.test.mjs && node tests/storage.test.mjs && node tests/auth.test.mjs && node tests/price-library.test.mjs && node tests/estimate-export.test.mjs && node tests/schemes.test.mjs && node tests/scheme-analysis.test.mjs",
+    "test": "node tests/pricing.test.mjs && node tests/storage.test.mjs && node tests/auth.test.mjs && node tests/price-library.test.mjs && node tests/estimate-export.test.mjs && node tests/schemes.test.mjs && node tests/scheme-analysis.test.mjs && node tests/scheme-costing.test.mjs",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "build:pages": "pnpm build && node scripts/package-pages.mjs"
@@ -64,3 +64,4 @@
   "type": "module",
   "packageManager": "pnpm@11.19.0"
 }
+

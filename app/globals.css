@@ -86,3 +86,59 @@ body{font-family:'Inter','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;-
   .ai-analysis-heading button { width: 100%; margin-top: 16px; }
   .analysis-facts,.activity-list,.analysis-followups { grid-template-columns: 1fr; }
 }
+
+
+.scheme-costing { margin-top: 24px; padding: 24px; }
+.scheme-costing-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.scheme-costing-heading p { color: var(--muted-foreground); font-size: 14px; margin-top: 8px; }
+.scheme-costing-actions { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.scheme-costing-actions label,.scheme-costing-context label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted-foreground); }
+.scheme-costing-actions select,.scheme-costing-context select,.scheme-price-search input { height: 40px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--foreground); padding: 0 10px; min-width: 210px; }
+.scheme-costing-context { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 20px; padding: 14px 16px; background: var(--muted); border-radius: 10px; font-size: 13px; }
+.scheme-costing-context label { margin-left: auto; }
+.scheme-costing-summary { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin: 20px 0 14px; color: var(--muted-foreground); font-size: 13px; }
+.scheme-costing-summary strong { color: var(--foreground); font-size: 16px; margin-left: 4px; }
+.scheme-costing-summary .known-total { color: var(--primary); margin-left: auto; }
+.scheme-costing-summary .known-total strong { color: var(--primary); font-size: 22px; }
+.costing-table { min-width: 980px; }
+.costing-table td,.costing-table th { padding: 12px 10px; vertical-align: top; }
+.costing-table th { background: #f6f8fc; color: var(--muted-foreground); font-size: 13px; font-weight: 600; text-align: left; }
+.costing-table td:first-child { min-width: 190px; }
+.costing-table td small { display: block; color: var(--muted-foreground); margin-top: 4px; line-height: 1.5; }
+.match-status { display: inline-flex; border-radius: 999px; padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+.match-ok { background: #e7f5ef; color: #20775d; }
+.match-suggested { background: #fff4df; color: #986319; }
+.match-multiple { background: #f1eaff; color: #6d45a7; }
+.match-unmatched { background: #fff0f2; color: #a3243a; }
+.match-info { background: #edf2fb; color: #637089; }
+.match-actions { display: flex; flex-direction: column; gap: 7px; min-width: 210px; }
+.match-actions > div { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
+.match-actions > div span { font-size: 12px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.scheme-price-search { margin-top: 20px; padding: 18px; background: #f7f9fd; border: 1px solid var(--border); border-radius: 10px; }
+.scheme-price-search h3 { font-size: 15px; }
+.scheme-price-search p { color: var(--muted-foreground); font-size: 13px; margin-top: 4px; }
+.scheme-price-search-row { display: flex; gap: 8px; margin-top: 12px; }
+.scheme-price-search input { flex: 1; min-width: 0; }
+.scheme-price-search-results { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.scheme-price-search-results > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; background: #fff; border-radius: 8px; font-size: 13px; }
+.scheme-costing-warning { color: #89643a; background: #fff4e7; border: 1px solid #f4dcc0; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 12px; }
+.scheme-costing-footer { display: flex; align-items: center; justify-content: flex-end; gap: 18px; flex-wrap: wrap; margin-top: 20px; }
+.scheme-costing-footer > div { display: flex; flex-direction: column; margin-right: auto; color: var(--foreground); }
+.scheme-costing-footer small { color: var(--muted-foreground); margin-top: 4px; }
+.pending-scheme-costs { margin-top: 14px; }
+@media (max-width: 800px) {
+  .scheme-costing { padding: 20px 16px; }
+  .scheme-costing-heading { display: block; }
+  .scheme-costing-actions { margin-top: 16px; }
+  .scheme-costing-actions label { flex: 1; }
+  .scheme-costing-actions select { width: 100%; min-width: 0; }
+  .scheme-costing-actions button { width: 100%; }
+  .scheme-costing-context label { width: 100%; margin-left: 0; }
+  .scheme-costing-summary .known-total { margin-left: 0; width: 100%; }
+  .scheme-price-search-row { flex-wrap: wrap; }
+  .scheme-price-search-row input { flex-basis: 100%; }
+  .scheme-costing-footer { display: block; }
+  .scheme-costing-footer > div { margin-bottom: 14px; }
+  .scheme-costing-footer button { width: 100%; }
+}
+

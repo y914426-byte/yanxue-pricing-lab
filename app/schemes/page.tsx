@@ -4,6 +4,7 @@ import { SchemeLink as Link } from '@/components/scheme-link';
 import { useSearchParams } from 'next/navigation';
 import { SchemeAccount } from '@/components/scheme-account';
 import { SchemeAnalysisPanel } from '@/components/scheme-analysis';
+import { SchemeCostingPanel } from '@/components/scheme-costing';
 import { Button } from '@/components/ui/button';
 import type { SchemeSummary, SchemeDocument } from '@/lib/scheme-input';
 export default function Schemes() {
@@ -115,12 +116,8 @@ export default function Schemes() {
             </p>
             <pre className="scheme-text">{detail.rawText}</pre>
             <SchemeAnalysisPanel schemeId={detail.id} />
+            <SchemeCostingPanel schemeId={detail.id} />
             <div className="scheme-actions">
-              <Button
-                onClick={() => setMessage('AI 成本分析功能将在下一阶段启用。')}
-              >
-                智能分析成本
-              </Button>
               <Button variant="outline" onClick={() => void remove(detail)}>
                 删除方案
               </Button>
@@ -180,3 +177,4 @@ export default function Schemes() {
     </main>
   );
 }
+

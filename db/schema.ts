@@ -39,3 +39,20 @@ export const schemeAnalyses = sqliteTable('scheme_analyses', {
  sourceTextHash: text('source_text_hash').notNull(),
  createdAt: text('created_at').notNull(),
 }, t => [index('idx_scheme_analyses_owner_document_created').on(t.ownerId, t.schemeDocumentId, t.createdAt)]);
+
+export const schemeCostEstimates = sqliteTable('scheme_cost_estimates', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  schemeDocumentId: text('scheme_document_id').notNull(),
+  schemeAnalysisId: text('scheme_analysis_id').notNull(),
+  priceSource: text('price_source').notNull(),
+  matchJson: text('match_json').notNull(),
+  knownCostTotal: real('known_cost_total').notNull(),
+  unresolvedCount: integer('unresolved_count').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, t => [
+  index('idx_scheme_cost_estimates_owner_scheme_updated').on(t.ownerId, t.schemeDocumentId, t.updatedAt),
+  index('idx_scheme_cost_estimates_owner_analysis_created').on(t.ownerId, t.schemeAnalysisId, t.createdAt),
+]);
+
