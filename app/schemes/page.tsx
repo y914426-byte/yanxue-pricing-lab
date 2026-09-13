@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { SchemeLink as Link } from '@/components/scheme-link';
 import { useSearchParams } from 'next/navigation';
 import { SchemeAccount } from '@/components/scheme-account';
+import { SchemeAnalysisPanel } from '@/components/scheme-analysis';
 import { Button } from '@/components/ui/button';
 import type { SchemeSummary, SchemeDocument } from '@/lib/scheme-input';
 export default function Schemes() {
@@ -113,6 +114,7 @@ export default function Schemes() {
               {new Date(detail.createdAt).toLocaleString('zh-CN')}
             </p>
             <pre className="scheme-text">{detail.rawText}</pre>
+            <SchemeAnalysisPanel schemeId={detail.id} />
             <div className="scheme-actions">
               <Button
                 onClick={() => setMessage('AI 成本分析功能将在下一阶段启用。')}
@@ -140,6 +142,12 @@ export default function Schemes() {
                       href={'/schemes?id=' + encodeURIComponent(item.id)}
                     >
                       查看
+                    </Link>
+                    <Link
+                      className="price-link"
+                      href={'/schemes?id=' + encodeURIComponent(item.id)}
+                    >
+                      智能分析
                     </Link>
                     <Button variant="outline" onClick={() => void remove(item)}>
                       删除

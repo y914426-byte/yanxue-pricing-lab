@@ -111,12 +111,20 @@ export default function SchemeImport() {
         )}
         <output aria-live="polite">{message}</output>
         {saved && (
-          <Link
-            className="price-link"
-            href={'/schemes?id=' + encodeURIComponent(saved)}
-          >
-            查看已保存方案 →
-          </Link>
+          <div className="scheme-actions">
+            <Link
+              className="price-link"
+              href={'/schemes?id=' + encodeURIComponent(saved)}
+            >
+              查看已保存方案 →
+            </Link>
+            <Link
+              className="price-link"
+              href={'/schemes?id=' + encodeURIComponent(saved)}
+            >
+              立即智能分析成本 →
+            </Link>
+          </div>
         )}
       </section>
     </main>

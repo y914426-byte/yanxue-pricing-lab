@@ -28,3 +28,14 @@ export const schemeDocuments = sqliteTable('scheme_documents', {
  fileName: text('file_name').notNull(), fileType: text('file_type').notNull(), rawText: text('raw_text').notNull(),
  createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(),
 }, t => [index('idx_scheme_documents_owner_created').on(t.ownerId, t.createdAt, t.id)]);
+
+export const schemeAnalyses = sqliteTable('scheme_analyses', {
+ id: text('id').primaryKey(),
+ schemeDocumentId: text('scheme_document_id').notNull(),
+ ownerId: text('owner_id').notNull(),
+ analysisJson: text('analysis_json').notNull(),
+ model: text('model').notNull(),
+ promptVersion: text('prompt_version').notNull(),
+ sourceTextHash: text('source_text_hash').notNull(),
+ createdAt: text('created_at').notNull(),
+}, t => [index('idx_scheme_analyses_owner_document_created').on(t.ownerId, t.schemeDocumentId, t.createdAt)]);
