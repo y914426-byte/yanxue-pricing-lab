@@ -1,9 +1,15 @@
 export class OpenAIError extends Error {
   readonly kind: 'config' | 'http' | 'timeout' | 'response';
+  readonly status: number | null;
 
-  constructor(message: string, kind: 'config' | 'http' | 'timeout' | 'response' = 'response') {
+  constructor(
+    message: string,
+    kind: 'config' | 'http' | 'timeout' | 'response' = 'response',
+    status: number | null = null,
+  ) {
     super(message);
     this.kind = kind;
+    this.status = status;
     this.name = 'OpenAIError';
   }
 }
@@ -61,11 +67,26 @@ function outputText(payload: unknown): string | null {
   return null;
 }
 
+function isDeepSeekBaseUrl(baseUrl: string) {
+  try {
+    const hostname = new URL(baseUrl).hostname.toLowerCase();
+    return hostname === 'api.deepseek.com' || hostname.endsWith('.deepseek.com');
+  } catch {
+    return false;
+  }
+}
+
 export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
   if (!request.apiKey.trim())
     throw new OpenAIError('OPENAI_API_KEY 未配置', 'config');
 
   const fetchImpl = request.fetchImpl ?? fetch;
+  const deepSeek = isDeepSeekBaseUrl(request.baseUrl);
+  const systemPrompt = deepSeek
+    ? request.systemPrompt +
+      '\n\n请严格输出 JSON，并完全遵循以下 JSON Schema；不要输出 Markdown 代码块或解释：\n' +
+      JSON.stringify(request.responseSchema)
+    : request.systemPrompt;
   let response: Response;
   try {
     response = await fetchImpl(request.baseUrl.replace(/\/$/, '') + '/responses', {
@@ -79,7 +100,7 @@ export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
         input: [
           {
             role: 'system',
-            content: [{ type: 'input_text', text: request.systemPrompt }],
+            content: [{ type: 'input_text', text: systemPrompt }],
           },
           {
             role: 'user',
@@ -87,13 +108,21 @@ export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
           },
         ],
         text: {
-          format: {
-            type: 'json_schema',
-            name: 'scheme_analysis',
-            strict: true,
-            schema: request.responseSchema,
-          },
+          format: deepSeek
+            ? { type: 'json_object' }
+            : {
+                type: 'json_schema',
+                name: 'scheme_analysis',
+                strict: true,
+                schema: request.responseSchema,
+              },
         },
+        ...(deepSeek
+          ? {
+              reasoning: { effort: 'none' },
+              max_output_tokens: 6000,
+            }
+          : {}),
       }),
       signal: request.signal,
     });
@@ -114,7 +143,7 @@ export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
     throw new OpenAIError('OpenAI 返回了非法 JSON', 'response');
   }
   if (!response.ok)
-    throw new OpenAIError('OpenAI 服务暂时不可用', 'http');
+    throw new OpenAIError('OpenAI 服务暂时不可用', 'http', response.status);
 
   const text = outputText(payload);
   if (!text) throw new OpenAIError('OpenAI 未返回分析结果', 'response');
@@ -124,3 +153,4 @@ export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
     throw new OpenAIError('AI 返回了非法 JSON', 'response');
   }
 }
+
