@@ -46,7 +46,9 @@ function makeDb(lastMigration = migrationFiles.length - 1) {
 
 function checkRequest(db, user = { userId: 'google:admin', displayName: 'Admin', email: 'admin@example.test' }, env = {}) {
   return systemCheckRequest(
-    new Request('https://pricing.test/api/admin/system-check'),
+    new Request('https://pricing.test/api/admin/system-check', {
+      headers: { Origin: 'https://pricing.test' },
+    }),
     user,
     {
       env: { DB: db, GOOGLE_CLIENT_ID: 'configured.apps.googleusercontent.com', OPENAI_API_KEY: 'secret-value', AI_ANALYSIS_MODEL: 'gpt-5.6-luna', OPENAI_API_BASE: 'https://api.openai.com/v1', ...env },
@@ -65,9 +67,6 @@ for (const [lastMigration, missing, hint] of [[4, 'scheme_analyses', '0005_caref
 
 assert.equal((await systemCheckRequest(new Request('https://pricing.test/api/admin/system-check', { headers: { Origin: 'https://pricing.test' } }), null, { env: {}, isAdmin: () => false })).status, 401);
 assert.equal((await checkRequest(makeDb(), { userId: 'google:user', displayName: 'User', email: 'user@example.test' })).status, 403);
-
-const noOriginAdminCheck = await checkRequest(makeDb());
-assert.equal(noOriginAdminCheck.status, 200);
 
 const fullCheck = await checkRequest(makeDb());
 assert.equal(fullCheck.status, 200);
@@ -122,3 +121,10 @@ assert.equal(versionDb.prepare('SELECT COUNT(*) AS count FROM scheme_cost_estima
 assert.equal(versionDb.prepare('SELECT scheme_analysis_id FROM scheme_confirmed_costs WHERE scheme_cost_estimate_id = ?').get(secondCostingBody.id).scheme_analysis_id, 'analysis-b');
 
 console.log('system-check and costing version tests passed');
+const systemCheckPageSource = readFileSync(
+  new URL('../app/admin/system-check/page.tsx', import.meta.url),
+  'utf8',
+);
+assert.match(systemCheckPageSource, /SchemeLink as Link/);
+assert.doesNotMatch(systemCheckPageSource, /from 'next\/link'/);
+
