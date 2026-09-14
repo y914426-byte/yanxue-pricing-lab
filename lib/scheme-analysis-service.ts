@@ -7,6 +7,7 @@ import {
   type AnalyzerConfig,
 } from './scheme-analyzer';
 import { parseSchemeAnalysis, type SchemeAnalysis } from './scheme-analysis-schema';
+import { OpenAIError } from './ai/openai';
 
 const reply = (data: unknown, status = 200) =>
   Response.json(data, {
@@ -189,7 +190,11 @@ export async function schemeAnalysisRequest(
         ? await options.analyzer(scheme.raw_text, config)
         : await analyzeScheme(scheme.raw_text, config);
       analysis = parseSchemeAnalysis(analysis);
-    } catch {
+    } catch (error) {
+      console.error('Scheme analysis failed', {
+        kind: error instanceof OpenAIError ? error.kind : 'validation',
+        status: error instanceof OpenAIError ? error.status : null,
+      });
       return reply(
         {
           error:
@@ -233,3 +238,4 @@ export async function schemeAnalysisRequest(
     return reply({ error: '智能分析服务暂不可用，请稍后重试。' }, 503);
   }
 }
+
