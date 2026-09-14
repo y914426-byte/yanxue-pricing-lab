@@ -22,8 +22,14 @@ type Template = {
 type Alias = {
   id: string;
   aliasName: string;
+  normalizedAliasName: string;
   canonicalName: string;
   isActive: boolean;
+};
+type StandardActivity = {
+  canonicalName: string;
+  normalizedCanonicalName: string;
+  aliases: Alias[];
 };
 type Batch = {
   batchId: string;
@@ -35,6 +41,7 @@ type Batch = {
 type KnowledgeResponse = {
   templates: Template[];
   aliases: Alias[];
+  standardActivities: StandardActivity[];
   recentBatches: Batch[];
   thresholds: { positiveCount: number; confidence: number };
 };
@@ -57,6 +64,7 @@ export default function LearningPage() {
   const [busy, setBusy] = useState(false);
   const [alias, setAlias] = useState({ aliasName: '', canonicalName: '' });
   const [names, setNames] = useState<Record<string, string>>({});
+  const [aliasCanonicalNames, setAliasCanonicalNames] = useState<Record<string, string>>({});
 
   async function load() {
     setError('');
@@ -68,6 +76,7 @@ export default function LearningPage() {
           next.templates.map((item) => [item.id, item.costName]),
         ),
       );
+      setAliasCanonicalNames(Object.fromEntries(next.aliases.map((item) => [item.id, item.canonicalName])));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '读取知识库失败');
     }
@@ -83,7 +92,7 @@ export default function LearningPage() {
     setBusy(true);
     setError('');
     try {
-      await request('/api/learning', {
+      await request('/api/activity-aliases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -111,8 +120,8 @@ export default function LearningPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'alias_create',
-          aliasName: alias.aliasName,
+          action: 'accept',
+          activityName: alias.aliasName,
           canonicalName: alias.canonicalName,
         }),
       });
@@ -130,14 +139,34 @@ export default function LearningPage() {
     setBusy(true);
     setError('');
     try {
-      await request('/api/learning', {
+      await request('/api/activity-aliases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'alias_delete', aliasId: id }),
+        body: JSON.stringify({ action: 'delete', aliasId: id }),
       });
       await load();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '停用活动别名失败');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updateAlias(item: Alias) {
+    const canonicalName = aliasCanonicalNames[item.id]?.trim();
+    if (!canonicalName) return;
+    setBusy(true);
+    setError('');
+    try {
+      await request('/api/activity-aliases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', aliasId: item.id, canonicalName }),
+      });
+      setMessage('活动别名归属已更新；原方案正文和历史 AI 分析保持不变。');
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '更新活动别名失败');
     } finally {
       setBusy(false);
     }
@@ -326,14 +355,14 @@ export default function LearningPage() {
               </div>
             )}
           </section>
-          <section className="panel">
+          <section className="panel" aria-labelledby="activity-normalization-heading">
             <div className="section-title">
-              <h2>活动别名</h2>
+              <h2 id="activity-normalization-heading">活动标准化</h2>
               <span className="tag">人工确认后生效</span>
             </div>
             <p className="muted">
               例如把“萌宠农场
-              DIY”人工归一为“动物农场”。系统不会自行强行合并活动。
+              DIY”人工归一为“动物农场”。修改只影响查询和学习层，不会改写原方案正文或历史分析。
             </p>
             <div className="alias-form">
               <label>
@@ -367,25 +396,21 @@ export default function LearningPage() {
                 保存别名
               </Button>
             </div>
-            {data.aliases.length > 0 && (
-              <div className="alias-list">
-                {data.aliases
-                  .filter((item) => item.isActive)
-                  .map((item) => (
-                    <div key={item.id}>
-                      <span>
-                        {item.aliasName} → {item.canonicalName}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={busy}
-                        onClick={() => void deleteAlias(item.id)}
-                      >
-                        停用
-                      </Button>
-                    </div>
-                  ))}
+            {data.standardActivities.length === 0 ? <p className="analysis-note">暂无标准活动。可手动添加别名，或在方案页确认活动归类。</p> : (
+              <div className="canonical-activity-list">
+                {data.standardActivities.map((activity) => <article key={activity.normalizedCanonicalName}>
+                  <div className="canonical-activity-title"><strong>标准活动：{activity.canonicalName}</strong><span className="tag">{activity.aliases.length} 个别名</span></div>
+                  {activity.aliases.length === 0 ? <p className="analysis-note">当前作为独立标准活动。</p> : <div className="alias-list">
+                    {activity.aliases.map((item) => <div key={item.id}>
+                      <span className="alias-name">{item.aliasName} →</span>
+                      <input aria-label={item.aliasName + ' 标准活动名称'} value={aliasCanonicalNames[item.id] ?? item.canonicalName} maxLength={120} disabled={busy} onChange={(event) => setAliasCanonicalNames({ ...aliasCanonicalNames, [item.id]: event.target.value })}/>
+                      <div className="knowledge-actions">
+                        <Button variant="outline" size="sm" disabled={busy || !aliasCanonicalNames[item.id]?.trim()} onClick={() => void updateAlias(item)}>修改归属</Button>
+                        <Button variant="ghost" size="sm" disabled={busy} onClick={() => void deleteAlias(item.id)}>停用</Button>
+                      </div>
+                    </div>)}
+                  </div>}
+                </article>)}
               </div>
             )}
           </section>
@@ -429,4 +454,3 @@ export default function LearningPage() {
     </main>
   );
 }
-

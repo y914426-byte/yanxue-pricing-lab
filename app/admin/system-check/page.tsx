@@ -29,6 +29,7 @@ const tableLabels: Record<string, string> = {
   scheme_learning_feedback: 'scheme_learning_feedback',
   scheme_confirmed_costs: 'scheme_confirmed_costs',
   activity_aliases: 'activity_aliases',
+  activity_alias_feedback: 'activity_alias_feedback',
   cost_price_aliases: 'cost_price_aliases',
 };
 
@@ -111,4 +112,3 @@ export default function SystemCheckPage() {
     </main>
   );
 }
-

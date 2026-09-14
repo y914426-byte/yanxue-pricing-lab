@@ -2,11 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { SchemeLink as Link } from '@/components/scheme-link';
+import { ActivitySemanticPanel } from '@/components/activity-semantic';
+import {
+  SchemeSimilarityPanel,
+  type SimilarSchemeCostSuggestion,
+} from '@/components/scheme-similarity';
 import { Button } from '@/components/ui/button';
 import {
   BILLING_HINTS,
   COST_CATEGORIES,
   groupLabel,
+  normalizeLearningCostName,
   type BillingHint,
   type CostCategory,
   type LearningSuggestion,
@@ -86,7 +92,9 @@ function originLabel(origin: SchemeCostMatch['origin']) {
       ? 'AI建议'
       : origin === 'history'
         ? '历史学习'
-        : '用户新增';
+        : origin === 'similar_scheme'
+          ? '相似方案建议'
+          : '用户新增';
 }
 
 function optionText(option: PriceOption) {
@@ -182,7 +190,7 @@ export function SchemeCostingPanel({ schemeId }: { schemeId: string }) {
         removed: item.removed,
         removalAction: item.removalAction ?? undefined,
       };
-      if (item.origin === 'user_added' || item.origin === 'history') {
+      if (item.origin === 'user_added' || item.origin === 'history' || item.origin === 'similar_scheme') {
         addedCosts.push({ key: item.key, ...edit, source: item.origin });
       } else {
         edits[item.key] = edit;
@@ -191,7 +199,12 @@ export function SchemeCostingPanel({ schemeId }: { schemeId: string }) {
     return { edits, addedCosts };
   }
 
-  async function runMatching(nextDecisions = decisions, confirm = !!costing) {
+  async function runMatching(
+    nextDecisions = decisions,
+    confirm = !!costing,
+    costingValue: SchemeCostingResult | null = costing,
+    extraAddedCosts: Record<string, unknown>[] = [],
+  ) {
     if (busy) return null;
     if (confirm && !window.confirm('重新匹配会使用当前最新价格库。原有成本匹配记录会保留。是否继续？')) return null;
     setBusy(true);
@@ -206,7 +219,10 @@ export function SchemeCostingPanel({ schemeId }: { schemeId: string }) {
           priceSource: source,
           ...(manualGroupType ? { groupType: manualGroupType } : {}),
           ...(Object.keys(nextDecisions).length ? { decisions: nextDecisions } : {}),
-          ...reviewPayload(costing),
+          ...(() => {
+            const review = reviewPayload(costingValue) as { edits?: Record<string, unknown>; addedCosts?: Record<string, unknown>[] };
+            return { ...review, addedCosts: [...(review.addedCosts ?? []), ...extraAddedCosts] };
+          })(),
         }),
       });
       setCosting(data.costing);
@@ -290,6 +306,37 @@ export function SchemeCostingPanel({ schemeId }: { schemeId: string }) {
       }],
     });
     setDirty(true);
+  }
+
+  function similarSuggestionItem(suggestion: SimilarSchemeCostSuggestion): SchemeCostMatch {
+    return {
+      key: 'added-' + crypto.randomUUID(), candidateIndex: -1, origin: 'similar_scheme',
+      originalName: suggestion.costName, removed: false, removalAction: null,
+      note: '由历史相似方案建议加入；价格必须重新匹配当前价格库。',
+      name: suggestion.costName, normalizedName: suggestion.normalizedCostName,
+      category: suggestion.category, relatedActivity: suggestion.activityName,
+      requiredness: suggestion.requiredness === 'required' ? 'required' : 'possible',
+      billingHint: suggestion.billingHint, candidateQuantity: null, candidateUnit: null,
+      status: 'unmatched', decision: 'none', matchQuality: null,
+      reason: '相似方案建议，用户采用后才加入本次成本。', options: [], selected: null,
+      quantity: null, quantityLabel: null, unitPrice: null, total: null,
+    };
+  }
+
+  async function addSimilarSuggestion(suggestion: SimilarSchemeCostSuggestion) {
+    const item = similarSuggestionItem(suggestion);
+    if (costing) {
+      const next = { ...costing, items: [...costing.items, item] };
+      setCosting(next);
+      setDirty(true);
+      await runMatching({}, false, next);
+      return;
+    }
+    await runMatching({}, false, null, [{
+      key: item.key, name: item.name, relatedActivity: item.relatedActivity,
+      category: item.category, billingHint: item.billingHint, quantity: null, unit: null,
+      note: item.note, source: 'similar_scheme',
+    }]);
   }
 
   async function searchPrices(value = search) {
@@ -397,6 +444,13 @@ export function SchemeCostingPanel({ schemeId }: { schemeId: string }) {
       {stale && <p className="scheme-costing-warning" role="alert">方案已重新分析，请重新匹配价格。旧成本快照仍保留为历史记录，本次不能继续确认学习或带入定价台。</p>}
       {error && <div className="error-box" role="alert">{error}</div>}
       {message && <output className="history-message" style={{ display: 'block' }}>{message}</output>}
+      <ActivitySemanticPanel schemeId={schemeId} />
+      <SchemeSimilarityPanel
+        schemeId={schemeId}
+        canAdopt={!!costing}
+        adoptedNames={(costing?.items ?? []).map((item) => normalizeLearningCostName(item.name))}
+        onAdopt={(suggestion) => void addSimilarSuggestion(suggestion)}
+      />
       {historySuggestions.length > 0 && <section className="learning-suggestions"><div className="section-title"><h3>历史学习建议</h3><span className="tag">仅供参考，不会自动加入</span></div><div className="learning-suggestion-grid">{historySuggestions.map((suggestion) => <article key={suggestion.normalizedActivityName + suggestion.normalizedCostName + suggestion.groupType}><div><strong>{suggestion.costName}</strong><small>{suggestion.activityDisplayName} · {suggestion.level === 'high' ? '历史高频' : '低频建议'} · 确认 {suggestion.positiveCount} 次 / 不适用 {suggestion.negativeCount} 次</small></div>{costing && <Button variant="outline" size="sm" disabled={busy || costing.items.some((item) => item.name === suggestion.costName && item.relatedActivity === suggestion.activityDisplayName)} onClick={() => addHistorySuggestion(suggestion)}>添加到成本</Button>}</article>)}</div></section>}
       {costing && <>
         <div className="scheme-costing-context">
@@ -426,4 +480,3 @@ export function SchemeCostingPanel({ schemeId }: { schemeId: string }) {
     </section>
   );
 }
-

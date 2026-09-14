@@ -87,7 +87,7 @@ type AddedCost = {
   quantity?: number | null;
   unit?: string | null;
   note?: string;
-  source?: 'history' | 'user_added';
+  source?: 'history' | 'similar_scheme' | 'user_added';
 };
 
 function stringValue(value: unknown, label: string, max = 100) {
@@ -158,7 +158,7 @@ function parseAddedCost(value: unknown): AddedCost {
   const unit = optionalString(item.unit, '数量单位', 30);
   const note = optionalString(item.note, '备注', 240);
   const key = optionalString(item.key, '成本编号', 100);
-  const source = item.source === undefined ? 'user_added' : enumValue(item.source, ['history', 'user_added'] as const, '成本来源');
+  const source = item.source === undefined ? 'user_added' : enumValue(item.source, ['history', 'similar_scheme', 'user_added'] as const, '成本来源');
   const quantity = nullableNumber(item.quantity, '数量');
   return {
     key: key ?? undefined,

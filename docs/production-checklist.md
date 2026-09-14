@@ -23,12 +23,10 @@
 wrangler d1 migrations list <现有数据库名称> --remote
 ```
 
-只按顺序执行尚未执行的下列文件：
+第一至第四阶段已经上线的环境中，`0000`–`0007` 应当已经执行。第五阶段只新增：
 
 ```text
-0005_careful_jean_grey.sql
-0006_organic_micromax.sql
-0007_faulty_arclight.sql
+0008_last_edwin_jarvis.sql
 ```
 
 例如确认状态后，可对同一个现有数据库执行：
@@ -37,8 +35,9 @@ wrangler d1 migrations list <现有数据库名称> --remote
 wrangler d1 migrations apply <现有数据库名称> --remote
 ```
 
-绝对不要删除数据库、重建数据库、清空数据或重跑已经执行的 `0000`–`0004`。本仓库
-的 `0005`、`0006`、`0007` 只新增对应阶段的表和索引，没有修改旧 migration。
+只有当远程列表明确只剩 `0008_last_edwin_jarvis.sql` 时，才执行 apply。绝对不要删除
+数据库、重建数据库、清空数据或重跑已经执行的 `0000`–`0007`。如果 migration 记录与
+实际表结构不一致，立即停止写操作并先核验生产 schema。
 
 ## 4. 配置生产变量
 
@@ -47,8 +46,8 @@ wrangler d1 migrations apply <现有数据库名称> --remote
 
 ```text
 OPENAI_API_KEY=<生产 Secret>
-AI_ANALYSIS_MODEL=gpt-5.6-luna
-OPENAI_API_BASE=https://api.openai.com/v1
+AI_ANALYSIS_MODEL=deepseek-v4-flash
+OPENAI_API_BASE=https://api.deepseek.com
 ```
 
 同时确认原有 `GOOGLE_CLIENT_ID` 和 `PRICE_ADMIN_EMAILS` 仍然存在，不要覆盖已有值。
@@ -69,8 +68,9 @@ OPENAI_API_BASE=https://api.openai.com/v1
 `estimates`、`google_sessions`、`price_catalogs`、`price_items`、`scheme_documents`、
 `scheme_analyses`、`scheme_cost_estimates`、`activity_cost_templates`、
 `scheme_learning_feedback`、`scheme_confirmed_costs`、`activity_aliases`、
-`cost_price_aliases`。缺少方案分析表提示执行 0005，缺少成本快照表提示执行 0006，
-缺少任意学习相关表提示执行 0007。
+`cost_price_aliases`、`activity_alias_feedback`。缺少方案分析表提示执行 0005，缺少成本
+快照表提示执行 0006，缺少第四阶段学习表提示执行 0007，缺少活动语义反馈表提示执行
+`0008_last_edwin_jarvis.sql`。
 
 ## 6. 人工功能验收
 
@@ -112,6 +112,19 @@ OPENAI_API_BASE=https://api.openai.com/v1
 导入另一份类似方案，完成 AI 分析和价格匹配，确认页面显示“历史学习建议”。历史建议
 只能作为建议，不能绕过当前团型、项目、日期、人数、价格权限和价格有效期过滤，也不能
 生成任何价格。
+
+### 测试 9：活动归一与相似方案
+
+在已有“割水稻”确认样本的账号中分析包含“水稻收割体验”的新方案。先检查确定性规则，
+仅在规则无法判断时由用户点击“AI 查找候选”；模型只能返回候选，不得自动写入别名。
+用户点击“确认归类”后，再确认页面把两者归一为同一标准活动，并展示相似方案、相似原因
+和已确认历史成本经验。点击“不是同一活动”后，同一错误映射不得反复调用 AI 推荐。
+
+### 测试 10：相似建议的价格安全
+
+历史成本经验只能显示成本是否常见。用户点击“采用”后，当前方案必须重新通过当前
+`price_items` 匹配；不得复制历史金额，不得把待询价项目按 0 元带入定价台。相似方案、
+活动别名和确认成本必须严格按当前 `owner_id` 隔离。
 
 ## 7. 版本一致性检查
 

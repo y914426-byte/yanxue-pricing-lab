@@ -57,7 +57,7 @@ function checkRequest(db, user = { userId: 'google:admin', displayName: 'Admin',
   );
 }
 
-for (const [lastMigration, missing, hint] of [[4, 'scheme_analyses', '0005_careful_jean_grey.sql'], [5, 'scheme_cost_estimates', '0006_organic_micromax.sql'], [6, 'activity_cost_templates', '0007_faulty_arclight.sql']]) {
+for (const [lastMigration, missing, hint] of [[4, 'scheme_analyses', '0005_careful_jean_grey.sql'], [5, 'scheme_cost_estimates', '0006_organic_micromax.sql'], [6, 'activity_cost_templates', '0007_faulty_arclight.sql'], [7, 'activity_alias_feedback', '0008_last_edwin_jarvis.sql']]) {
   const response = await checkRequest(makeDb(lastMigration));
   assert.equal(response.status, 200);
   const body = await response.json();
@@ -75,6 +75,7 @@ assert.equal(fullBody.configuration.openai.apiKeyConfigured, true);
 assert.equal(fullBody.configuration.openai.model, 'gpt-5.6-luna');
 assert.equal(fullBody.tables.scheme_analyses.present, true);
 assert.equal(fullBody.tables.scheme_learning_feedback.present, true);
+assert.equal(fullBody.tables.activity_alias_feedback.present, true);
 assert.equal(JSON.stringify(fullBody).includes('secret-value'), false);
 assert.equal(Object.hasOwn(fullBody.configuration.openai, 'apiKey'), false);
 
@@ -127,4 +128,3 @@ const systemCheckPageSource = readFileSync(
 );
 assert.match(systemCheckPageSource, /SchemeLink as Link/);
 assert.doesNotMatch(systemCheckPageSource, /from 'next\/link'/);
-

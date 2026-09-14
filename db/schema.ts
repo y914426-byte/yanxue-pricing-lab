@@ -174,6 +174,32 @@ export const activityAliases = sqliteTable('activity_aliases', {
   index('idx_activity_aliases_owner_canonical').on(t.ownerId, t.normalizedCanonicalName),
 ]);
 
+export const activityAliasFeedback = sqliteTable('activity_alias_feedback', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  activityName: text('activity_name').notNull(),
+  normalizedActivityName: text('normalized_activity_name').notNull(),
+  candidateName: text('candidate_name').notNull(),
+  normalizedCandidateName: text('normalized_candidate_name').notNull(),
+  decision: text('decision'),
+  source: text('source').notNull().default('deterministic'),
+  confidence: real('confidence'),
+  reason: text('reason').notNull().default(''),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (t) => [
+  uniqueIndex('idx_activity_alias_feedback_owner_pair').on(
+    t.ownerId,
+    t.normalizedActivityName,
+    t.normalizedCandidateName,
+  ),
+  index('idx_activity_alias_feedback_owner_activity').on(
+    t.ownerId,
+    t.normalizedActivityName,
+    t.decision,
+  ),
+]);
+
 export const costPriceAliases = sqliteTable('cost_price_aliases', {
   id: text('id').primaryKey(),
   ownerId: text('owner_id').notNull(),
@@ -193,4 +219,3 @@ export const costPriceAliases = sqliteTable('cost_price_aliases', {
   ),
   index('idx_cost_price_aliases_owner_cost').on(t.ownerId, t.normalizedCostName),
 ]);
-

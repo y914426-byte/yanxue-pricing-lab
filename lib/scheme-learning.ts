@@ -26,6 +26,7 @@ export const COSTING_SOURCES = [
   'scheme_explicit',
   'ai_suggestion',
   'history',
+  'similar_scheme',
   'user_added',
 ] as const;
 export type CostingSource = (typeof COSTING_SOURCES)[number];
@@ -152,4 +153,3 @@ export function activityNamesForAnalysis(analysis: SchemeAnalysis) {
   ];
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
-

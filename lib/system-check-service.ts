@@ -1,4 +1,4 @@
-import { authReply, type GoogleUser } from './google-auth';
+import { authReply, sameOrigin, type GoogleUser } from './google-auth';
 import { isPriceAdmin } from './price-library';
 import {
   DEFAULT_AI_ANALYSIS_MODEL,
@@ -17,6 +17,7 @@ const TABLES = [
   'scheme_learning_feedback',
   'scheme_confirmed_costs',
   'activity_aliases',
+  'activity_alias_feedback',
   'cost_price_aliases',
 ] as const;
 
@@ -27,6 +28,7 @@ const MIGRATION_HINTS: Record<string, string> = {
   scheme_learning_feedback: '需要执行 0007_faulty_arclight.sql',
   scheme_confirmed_costs: '需要执行 0007_faulty_arclight.sql',
   activity_aliases: '需要执行 0007_faulty_arclight.sql',
+  activity_alias_feedback: '需要执行 0008_last_edwin_jarvis.sql',
   cost_price_aliases: '需要执行 0007_faulty_arclight.sql',
 };
 
@@ -86,6 +88,7 @@ export async function systemCheckRequest(
   if (!(options.isAdmin ?? (() => isPriceAdmin(user, options.env.PRICE_ADMIN_EMAILS)))(user))
     return authReply({ error: '没有查看系统检查的权限' }, 403);
   if (request.method !== 'GET') return authReply({ error: '不支持的操作' }, 405);
+  if (!sameOrigin(request)) return authReply({ error: '请求来源无效' }, 403);
 
   const env = options.env;
   const hasDbBinding = !!env.DB;
@@ -163,6 +166,7 @@ export async function systemCheckRequest(
           'scheme_learning_feedback',
           'scheme_confirmed_costs',
           'activity_aliases',
+          'activity_alias_feedback',
           'cost_price_aliases',
         ]),
         all([
@@ -170,6 +174,7 @@ export async function systemCheckRequest(
           'scheme_learning_feedback',
           'scheme_confirmed_costs',
           'activity_aliases',
+          'activity_alias_feedback',
           'cost_price_aliases',
         ])
           ? '学习服务可用'

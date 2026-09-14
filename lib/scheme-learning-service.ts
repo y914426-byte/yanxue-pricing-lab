@@ -300,6 +300,9 @@ async function learningSummary(db: D1Database, owner: string, schemeId: string |
     (schemeCounts.get(key) ?? schemeCounts.set(key, new Set()).get(key)!).add(row.scheme_document_id);
   }
   const aliases = await db.prepare('SELECT id, alias_name, normalized_alias_name, canonical_name, normalized_canonical_name, is_active FROM activity_aliases WHERE owner_id = ? ORDER BY updated_at DESC, id DESC').bind(owner).all<Record<string, unknown>>();
+  const aliasFeedback = await db.prepare(`SELECT activity_name, normalized_activity_name, candidate_name,
+    normalized_candidate_name, decision FROM activity_alias_feedback WHERE owner_id = ?
+    ORDER BY updated_at DESC, id DESC LIMIT 2000`).bind(owner).all<Record<string, unknown>>();
   const batches = await db.prepare(`SELECT confirmation_batch_id, scheme_document_id, scheme_cost_estimate_id,
     MIN(confirmed_at) AS created_at, MAX(revoked_at) AS revoked_at, COUNT(*) AS relation_count
     FROM scheme_confirmed_costs WHERE owner_id = ? GROUP BY confirmation_batch_id
@@ -307,6 +310,19 @@ async function learningSummary(db: D1Database, owner: string, schemeId: string |
   let latestForScheme = null;
   if (schemeId) {
     latestForScheme = batches.results.find((row) => row.scheme_document_id === schemeId) ?? null;
+  }
+  const activeAliases = aliases.results.filter((row) => !!row.is_active);
+  const canonicalNames = new Map<string, string>();
+  for (const row of activeAliases) canonicalNames.set(String(row.normalized_canonical_name), String(row.canonical_name));
+  for (const row of rows) {
+    const normalized = String(row.normalized_activity_name);
+    const alias = activeAliases.find((item) => item.normalized_alias_name === normalized);
+    const key = alias ? String(alias.normalized_canonical_name) : normalized;
+    const name = alias ? String(alias.canonical_name) : row.activity_name;
+    if (key) canonicalNames.set(key, name);
+  }
+  for (const row of aliasFeedback.results) {
+    if (row.decision === 'independent') canonicalNames.set(String(row.normalized_activity_name), String(row.activity_name));
   }
   return {
     templates: rows.map((row) => ({
@@ -331,6 +347,16 @@ async function learningSummary(db: D1Database, owner: string, schemeId: string |
       return { activityName: row?.activity_name ?? normalizedActivityName, normalizedActivityName, schemeCount: schemeCounts.get(normalizedActivityName)?.size ?? 0 };
     }),
     aliases: aliases.results.map((row) => ({ id: row.id, aliasName: row.alias_name, normalizedAliasName: row.normalized_alias_name, canonicalName: row.canonical_name, normalizedCanonicalName: row.normalized_canonical_name, isActive: !!row.is_active })),
+    standardActivities: [...canonicalNames].map(([normalizedCanonicalName, canonicalName]) => ({
+      canonicalName,
+      normalizedCanonicalName,
+      aliases: activeAliases.filter((row) => row.normalized_canonical_name === normalizedCanonicalName).map((row) => ({
+        id: row.id,
+        aliasName: row.alias_name,
+        normalizedAliasName: row.normalized_alias_name,
+        canonicalName: row.canonical_name,
+      })),
+    })).sort((left, right) => left.canonicalName.localeCompare(right.canonicalName, 'zh-CN')),
     recentBatches: batches.results.map((row) => ({ batchId: row.confirmation_batch_id, schemeId: row.scheme_document_id, schemeCostEstimateId: row.scheme_cost_estimate_id, createdAt: row.created_at, revokedAt: row.revoked_at, relationCount: Number(row.relation_count) })),
     latestForScheme: latestForScheme ? { batchId: latestForScheme.confirmation_batch_id, schemeId: latestForScheme.scheme_document_id, schemeCostEstimateId: latestForScheme.scheme_cost_estimate_id, createdAt: latestForScheme.created_at, revokedAt: latestForScheme.revoked_at, relationCount: Number(latestForScheme.relation_count) } : null,
     thresholds: { positiveCount: LEARNING_PROMOTION_THRESHOLD, confidence: LEARNING_CONFIDENCE_THRESHOLD },

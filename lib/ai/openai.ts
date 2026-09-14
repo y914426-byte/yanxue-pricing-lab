@@ -22,6 +22,8 @@ type OpenAIRequest = {
   systemPrompt: string;
   userText: string;
   responseSchema: JsonSchema;
+  responseName?: string;
+  maxOutputTokens?: number;
   signal: AbortSignal;
   fetchImpl?: typeof fetch;
 };
@@ -112,7 +114,7 @@ export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
             ? { type: 'json_object' }
             : {
                 type: 'json_schema',
-                name: 'scheme_analysis',
+                name: request.responseName ?? 'scheme_analysis',
                 strict: true,
                 schema: request.responseSchema,
               },
@@ -120,9 +122,11 @@ export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
         ...(deepSeek
           ? {
               reasoning: { effort: 'none' },
-              max_output_tokens: 6000,
+              max_output_tokens: request.maxOutputTokens ?? 6000,
             }
-          : {}),
+          : request.maxOutputTokens
+            ? { max_output_tokens: request.maxOutputTokens }
+            : {}),
       }),
       signal: request.signal,
     });
@@ -153,4 +157,3 @@ export async function callOpenAIJson(request: OpenAIRequest): Promise<unknown> {
     throw new OpenAIError('AI 返回了非法 JSON', 'response');
   }
 }
-
