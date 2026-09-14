@@ -58,7 +58,7 @@ export async function analyzeScheme(
       baseUrl: config.baseUrl,
       model: config.model,
       systemPrompt: SCHEME_ANALYSIS_SYSTEM_PROMPT,
-      userText: '<scheme_document>\\n' + rawText + '\\n</scheme_document>',
+      userText: '<scheme_document>\n' + rawText + '\n</scheme_document>',
       responseSchema: SCHEME_ANALYSIS_JSON_SCHEMA,
       signal: controller.signal,
       fetchImpl: config.fetchImpl,
