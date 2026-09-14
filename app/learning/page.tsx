@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { SchemeLink as Link } from '@/components/scheme-link';
 import { Button } from '@/components/ui/button';
 import { groupLabel } from '@/lib/scheme-learning';
 
