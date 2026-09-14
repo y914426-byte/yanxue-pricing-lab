@@ -76,6 +76,13 @@ async function callLearning(method, owner, body, query = '') {
 }
 
 try {
+  const costingPanelSource = readFileSync(
+    new URL('../components/scheme-costing.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(costingPanelSource, /SchemeLink as Link/);
+  assert.doesNotMatch(costingPanelSource, /from 'next\/link'/);
+
   assert.equal((await callLearning('POST', null, { action: 'confirm', schemeId: 'x' })).status, 401);
   const firstScheme = 'scheme-alice-0';
   saveScheme('alice', firstScheme);
