@@ -17,6 +17,7 @@ registerHooks({
 
 const { schemeAnalysisRequest } = await import('../lib/scheme-analysis-service.ts');
 const { sourceTextHash } = await import('../lib/scheme-analyzer.ts');
+const { callOpenAIJson, OpenAIError } = await import('../lib/ai/openai.ts');
 
 const sqlite = new DatabaseSync(':memory:');
 const db = {
@@ -141,6 +142,70 @@ async function saveScheme(owner, suffix = '') {
 }
 
 try {
+  const responsePayload = {
+    output: [
+      {
+        content: [
+          { type: 'output_text', text: JSON.stringify(validAnalysis) },
+        ],
+      },
+    ],
+  };
+  let deepSeekRequest;
+  const deepSeekResult = await callOpenAIJson({
+    apiKey: 'deepseek-test-key',
+    baseUrl: 'https://api.deepseek.com',
+    model: 'deepseek-v4-flash',
+    systemPrompt: '输出 JSON',
+    userText: '<scheme_document>测试</scheme_document>',
+    responseSchema: { type: 'object', properties: { schemaVersion: { const: 1 } } },
+    signal: new AbortController().signal,
+    fetchImpl: async (url, init) => {
+      deepSeekRequest = { url, body: JSON.parse(init.body) };
+      return Response.json(responsePayload);
+    },
+  });
+  assert.deepEqual(deepSeekResult, validAnalysis);
+  assert.equal(deepSeekRequest.url, 'https://api.deepseek.com/responses');
+  assert.equal(deepSeekRequest.body.text.format.type, 'json_object');
+  assert.equal(deepSeekRequest.body.reasoning.effort, 'none');
+  assert.equal(deepSeekRequest.body.max_output_tokens, 6000);
+  assert.match(deepSeekRequest.body.input[0].content[0].text, /schemaVersion/);
+
+  let openAIRequest;
+  await callOpenAIJson({
+    apiKey: 'openai-test-key',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'test-model',
+    systemPrompt: '输出 JSON',
+    userText: '测试',
+    responseSchema: { type: 'object' },
+    signal: new AbortController().signal,
+    fetchImpl: async (url, init) => {
+      openAIRequest = { url, body: JSON.parse(init.body) };
+      return Response.json(responsePayload);
+    },
+  });
+  assert.equal(openAIRequest.url, 'https://api.openai.com/v1/responses');
+  assert.equal(openAIRequest.body.text.format.type, 'json_schema');
+  assert.equal(openAIRequest.body.text.format.strict, true);
+  assert.equal(openAIRequest.body.reasoning, undefined);
+
+  await assert.rejects(
+    callOpenAIJson({
+      apiKey: 'test-key',
+      baseUrl: 'https://api.deepseek.com',
+      model: 'deepseek-v4-flash',
+      systemPrompt: '输出 JSON',
+      userText: '测试',
+      responseSchema: { type: 'object' },
+      signal: new AbortController().signal,
+      fetchImpl: async () => Response.json({ error: {} }, { status: 401 }),
+    }),
+    (error) =>
+      error instanceof OpenAIError && error.kind === 'http' && error.status === 401,
+  );
+
   assert.equal((await call('POST', null, { schemeId: 'x' })).status, 401);
   assert.equal((await call('GET', 'alice', undefined, '?schemeId=missing')).status, 404);
 
@@ -288,7 +353,7 @@ try {
   assert.equal((await unknown.json()).analysis.summary.groupType, 'unknown');
 
   console.log(
-    'Passed: scheme analysis auth isolation, config failure, timeout, invalid JSON/schema, persistence, hash, model, prompt version, cache, force history and nullable fields.',
+    'Passed: OpenAI/DeepSeek Responses transports, scheme analysis auth isolation, config failure, timeout, invalid JSON/schema, persistence, hash, model, prompt version, cache, force history and nullable fields.',
   );
 } finally {
   sqlite.close();
