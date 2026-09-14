@@ -1,4 +1,4 @@
-import { authReply, sameOrigin, type GoogleUser } from './google-auth';
+import { authReply, type GoogleUser } from './google-auth';
 import { isPriceAdmin } from './price-library';
 import {
   DEFAULT_AI_ANALYSIS_MODEL,
@@ -86,7 +86,6 @@ export async function systemCheckRequest(
   if (!(options.isAdmin ?? (() => isPriceAdmin(user, options.env.PRICE_ADMIN_EMAILS)))(user))
     return authReply({ error: '没有查看系统检查的权限' }, 403);
   if (request.method !== 'GET') return authReply({ error: '不支持的操作' }, 405);
-  if (!sameOrigin(request)) return authReply({ error: '请求来源无效' }, 403);
 
   const env = options.env;
   const hasDbBinding = !!env.DB;
