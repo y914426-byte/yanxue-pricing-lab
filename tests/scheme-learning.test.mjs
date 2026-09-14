@@ -82,6 +82,12 @@ try {
   );
   assert.match(costingPanelSource, /SchemeLink as Link/);
   assert.doesNotMatch(costingPanelSource, /from 'next\/link'/);
+  const learningPageSource = readFileSync(
+    new URL('../app/learning/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(learningPageSource, /SchemeLink as Link/);
+  assert.doesNotMatch(learningPageSource, /from 'next\/link'/);
 
   assert.equal((await callLearning('POST', null, { action: 'confirm', schemeId: 'x' })).status, 401);
   const firstScheme = 'scheme-alice-0';
