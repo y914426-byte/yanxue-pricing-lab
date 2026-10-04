@@ -219,3 +219,19 @@ export const costPriceAliases = sqliteTable('cost_price_aliases', {
   ),
   index('idx_cost_price_aliases_owner_cost').on(t.ownerId, t.normalizedCostName),
 ]);
+
+
+export const learningCalendarEvents = sqliteTable('learning_calendar_events', {
+  id: text('id').primaryKey(),
+  eventDate: text('event_date').notNull(),
+  name: text('name').notNull(),
+  audience: text('audience').notNull().default(''),
+  people: integer('people').notNull().default(0),
+  place: text('place').notNull().default(''),
+  status: text('status').notNull().default('pending'),
+  flow: text('flow').notNull().default(''),
+  materialsJson: text('materials_json').notNull().default('[]'),
+  note: text('note').notNull().default(''),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, t => [index('idx_learning_calendar_events_date').on(t.eventDate), index('idx_learning_calendar_events_status_date').on(t.status,t.eventDate)]);
