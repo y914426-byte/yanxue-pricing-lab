@@ -89,3 +89,12 @@ Google 身份验证的自动化测试使用临时 RSA 密钥签发测试凭据�
 在 Pages 生产环境绑定 D1 数据库为 `DB`，按 drizzle 中 SQL 文件顺序初始化一次，后续只应用新增迁移；不要重建数据库。配置运行时文本变量 `GOOGLE_CLIENT_ID`。Google Cloud 中相同 Web 客户端必须添加 JavaScript 来源 `https://yanxue-pricing-lab.pages.dev`。不需要客户端密钥。
 
 GitHub main 更新后，Pages 自动重新构建部署；数据库不随构建删除。方案保存后由同一 Google 账号跨设备读取。原 Sites 网站和此 Pages 网站使用独立数据库，代码部署不会复制原站历史记录。Pages 入口删除外部 oai-* 身份头并禁用旧 Sites 身份迁移接口，避免把访客可伪造的请求头当作登录身份。原 Sites 迁移流程保持原样。
+
+
+## 江南农耕文化园研学活动日历
+
+- 页面：`/yanxue-calendar`
+- 数据接口：`/api/learning-calendar`
+- 数据存储：Cloudflare D1 的 `learning_calendar_events`
+- 公开用户可查看活动；配置 `CALENDAR_ADMIN_EMAIL` 后，该 Google 账号可新增、编辑活动和勾选物资。
+- 首次发布需执行新增的 `drizzle/0009_learning_calendar.sql`，不要重建已有 D1 数据库。
