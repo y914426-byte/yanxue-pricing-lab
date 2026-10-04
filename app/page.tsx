@@ -29,6 +29,22 @@ const errors=useMemo(()=>validate(plan),[plan]);
 const result=useMemo(()=>errors.length?null:calculate(plan),[plan,errors]);
 const first=useMemo(()=>errors.length?null:breakEven(plan),[plan,errors]);
 function update(next:Plan){setPlan(next);setEdited(true)}
+useEffect(()=>{
+ try{
+  const raw=sessionStorage.getItem('pricing-calendar-draft');
+  if(!raw)return;
+  const value=JSON.parse(raw) as {title?:string;people?:number;free?:number};
+  if(value&&typeof value==='object'){
+   const next={...ref.current,
+    ...(typeof value.people==='number'?{paying:Math.max(0,Math.floor(value.people))}:{}),
+    ...(typeof value.free==='number'?{free:Math.max(0,Math.floor(value.free))}:{}),
+   };
+   setPlan(next);ref.current=next;setEdited(true);
+   if(typeof value.title==='string'&&value.title.trim())setTitle(value.title.slice(0,80));
+  }
+  sessionStorage.removeItem('pricing-calendar-draft');
+ }catch{}
+},[]);
 function setCost(id:string,patch:Partial<Cost>){update({...plan,costs:plan.costs.map(c=>c.id===id?{...c,...patch}:c)})}
 useEffect(()=>{
 type Context={registerTool:(tool:object,options:{signal:AbortSignal})=>void|Promise<void>};
