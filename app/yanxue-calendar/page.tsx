@@ -11,7 +11,20 @@ export default function Calendar(){
  const days=Array.from({length:42},(_,i)=>{const n=i-first+1;return n>0&&n<=count?n:null});
  const shift=(n:number)=>{const d=new Date(y,m-1+n,1);setMonth(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'))};
  const save=async()=>{const body=form.id?form:{...form,id:crypto.randomUUID()};const r=await fetch('/api/learning-calendar',{method:form.id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok){setError(d.error||'保存失败');return}setEditing(false);await load()};
- return <main className="calendar"><style>{css}</style><header><div><small>JIANGNAN FARM CULTURE PARK · YANXUE</small><h1>研学活动日历</h1><p>排期 · 活动详情 · 物资准备</p></div>{canEdit?<button className="primary" onClick={()=>{setForm(blank());setEditing(true)}}>＋ 新增活动</button>:<span>公开查看 · 管理员可编辑</span>}</header>
+ return 'use client';
+import {useEffect,useMemo,useState} from 'react';
+type M={name:string;qty:string;note:string;done:boolean}; type E={id:string;date:string;name:string;audience:string;people:number;place:string;status:string;flow:string;materials:M[];note:string};
+const labels:Record<string,string>={confirmed:'已确定',pending:'待确认',booking:'预约中',completed:'已完成',cancelled:'已取消'};
+const blank=():E=>({id:'',date:new Date().toISOString().slice(0,10),name:'',audience:'',people:0,place:'',status:'pending',flow:'',materials:[],note:''});
+export default function Calendar(){
+ const [events,setEvents]=useState<E[]>([]),[month,setMonth]=useState('2026-10'),[current,setCurrent]=useState<E|null>(null),[form,setForm]=useState<E>(blank()),[editing,setEditing]=useState(false),[canEdit,setCanEdit]=useState(false),[error,setError]=useState('');
+ const load=async()=>{try{const r=await fetch('/api/learning-calendar',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error);setEvents(d.events||[]);setCanEdit(!!d.canEdit)}catch(e){setError(e instanceof Error?e.message:'读取失败')}};
+ useEffect(()=>{load()},[]);
+ const list=useMemo(()=>events.filter(e=>e.date.startsWith(month)),[events]); const parts=month.split('-').map(Number),y=parts[0],m=parts[1],first=new Date(y,m-1,1).getDay(),count=new Date(y,m,0).getDate();
+ const days=Array.from({length:42},(_,i)=>{const n=i-first+1;return n>0&&n<=count?n:null});
+ const shift=(n:number)=>{const d=new Date(y,m-1+n,1);setMonth(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'))};
+ const save=async()=>{const body=form.id?form:{...form,id:crypto.randomUUID()};const r=await fetch('/api/learning-calendar',{method:form.id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok){setError(d.error||'保存失败');return}setEditing(false);await load()};
+ return <main className="calendar"><div className="subnav"><a href="/">← 返回定价台</a><span>研学日历</span><a href="/scheme-import">方案导入</a><a href="/schemes">我的方案</a></div><style>{css}</style><header><div><small>JIANGNAN FARM CULTURE PARK · YANXUE</small><h1>研学活动日历</h1><p>排期 · 活动详情 · 物资准备</p></div>{canEdit?<button className="primary" onClick={()=>{setForm(blank());setEditing(true)}}>＋ 新增活动</button>:<span>公开查看 · 管理员可编辑</span>}</header>
  {error&&<div className="error">{error}</div>}<div className="toolbar"><button onClick={()=>shift(-1)}>‹</button><b>{y}年{m}月</b><button onClick={()=>shift(1)}>›</button><button onClick={()=>setMonth(new Date().toISOString().slice(0,7))}>本月</button><span>本月 {list.length} 场</span></div>
  <section className="cal"><div className="week">{['日','一','二','三','四','五','六'].map(x=><b key={x}>{x}</b>)}</div><div className="grid">{days.map((n,i)=>{const date=n?month+'-'+String(n).padStart(2,'0'):'';const es=list.filter(e=>e.date===date);return <div className="day" key={i}>{n&&<em>{n}</em>}{es.map(e=><button key={e.id} className={'event '+e.status} onClick={()=>setCurrent(e)}>{e.name}<small>{e.people}人</small></button>)}</div>})}</div></section>
  <h2>本月活动</h2>{list.map(e=><button className="row" key={e.id} onClick={()=>setCurrent(e)}><strong>{e.date.slice(8)}<small>日</small></strong><div><b>{e.name}</b><span>{e.audience||'未填写'} · {e.people}人 · {e.place||'未填写场地'}</span></div><i className={e.status}>{labels[e.status]||e.status}</i></button>)}
