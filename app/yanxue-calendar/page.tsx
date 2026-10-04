@@ -20,7 +20,7 @@ export default function Calendar(){
  const save=async()=>{setError('');const body=form.id?form:{...form,id:crypto.randomUUID()};const r=await fetch('/api/learning-calendar',{method:form.id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok){setError(d.error||'保存失败');return}setEditing(false);await load()};
  const remove=async(id:string)=>{if(!confirm('确定删除这场活动吗？'))return;const r=await fetch('/api/learning-calendar',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const d=await r.json();if(!r.ok){setError(d.error||'删除失败');return}setCurrent(null);await load()};
  return <main className="calendar">
-  <div className="subnav"><a href="/">← 返回定价台</a><span>研学运营中心</span><a href="/yanxue-calendar">活动日历</a><a href="/scheme-import">方案导入</a><a href="/schemes">我的方案</a></div>
+  <div className="subnav"><a href="/">← 返回定价台</a><span>研学运营中心</span><a href="/yanxue-calendar">活动日历</a><a href="/yanxue-calendar/materials">物资中心</a><a href="/scheme-import">方案导入</a><a href="/schemes">我的方案</a></div>
   <style>{css}</style>
   <header><div><small>JIANGNAN FARM CULTURE PARK · YANXUE OPERATIONS</small><h1>研学运营中心</h1><p>排期 · 活动详情 · 物资准备 · 运营概览</p></div>{canEdit?<button className="primary" onClick={()=>{setForm(blank());setEditing(true)}}>＋ 新增活动</button>:<span>公开查看 · 管理员可编辑</span>}</header>
   {error&&<div className="error">{error}</div>}
