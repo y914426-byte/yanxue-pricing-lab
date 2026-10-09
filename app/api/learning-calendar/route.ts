@@ -31,7 +31,7 @@ async function handle(request:Request){
     const user=await getGoogleUser(request,getDb);
     const adminEmail=(env as Record<string,unknown>).CALENDAR_ADMIN_EMAIL;
     if(!user || typeof adminEmail!=='string' || adminEmail.trim().toLowerCase()!==user.email.toLowerCase())
-      return authReply({error:'只有日历管理员可以新增或修改活动。请先登录管理员 Google 账号。'},403);
+      return authReply({error:'当前 Google 账号没有日历编辑权限。请确认已登录 Cloudflare Pages 中 CALENDAR_ADMIN_EMAIL 对应的管理员邮箱。'},403);
     if(!request.headers.get('content-type')?.startsWith('application/json'))return authReply({error:'请求格式无效'},415);
     const body=await request.json() as Record<string,unknown>;
     const now=new Date().toISOString();
