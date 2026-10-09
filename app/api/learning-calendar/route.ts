@@ -9,6 +9,32 @@ type EventRow = {
   status:string; flow:string; materials_json:string; note:string; created_at:string; updated_at:string;
 };
 
+let schemaReady: Promise<void> | undefined;
+
+async function ensureCalendarSchema(db:ReturnType<typeof getDb>){
+  if(!schemaReady){
+    schemaReady=(async()=>{
+      await db.prepare(`CREATE TABLE IF NOT EXISTS learning_calendar_events (
+        id TEXT PRIMARY KEY NOT NULL,
+        event_date TEXT NOT NULL,
+        name TEXT NOT NULL,
+        audience TEXT NOT NULL DEFAULT '',
+        people INTEGER NOT NULL DEFAULT 0,
+        place TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'pending',
+        flow TEXT NOT NULL DEFAULT '',
+        materials_json TEXT NOT NULL DEFAULT '[]',
+        note TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`).run();
+      await db.prepare('CREATE INDEX IF NOT EXISTS idx_learning_calendar_events_date ON learning_calendar_events(event_date)').run();
+      await db.prepare('CREATE INDEX IF NOT EXISTS idx_learning_calendar_events_status_date ON learning_calendar_events(status,event_date)').run();
+    })();
+  }
+  try{await schemaReady}catch(error){schemaReady=undefined;throw error}
+}
+
 function map(row:EventRow){
   let materials:unknown[]=[];
   try{materials=JSON.parse(row.materials_json||'[]')}catch{}
@@ -18,6 +44,7 @@ function map(row:EventRow){
 async function handle(request:Request){
   try{
     const db=getDb();
+    await ensureCalendarSchema(db);
     const url=new URL(request.url);
     const method=request.method.toUpperCase();
     if(method==='GET'){
