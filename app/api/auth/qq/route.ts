@@ -10,8 +10,8 @@ export async function GET(request: Request) {
   const redirectTarget = url.searchParams.get('redirect') || '/';
 
   // 1. 如果有官方 QQ OAuth 回调 code，且配置了 QQ_APP_ID / QQ_APP_KEY
-  const qqAppId = (env as Record<string, unknown>).QQ_APP_ID;
-  const qqAppKey = (env as Record<string, unknown>).QQ_APP_KEY;
+  const qqAppId = (env as unknown as Record<string, unknown>).QQ_APP_ID;
+  const qqAppKey = (env as unknown as Record<string, unknown>).QQ_APP_KEY;
 
   if (code && typeof qqAppId === 'string' && typeof qqAppKey === 'string') {
     try {

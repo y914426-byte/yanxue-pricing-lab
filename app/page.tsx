@@ -72,9 +72,9 @@ export default function Home() {
     let active = true;
     fetch('/api/learning-calendar', { cache: 'no-store' })
       .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || '读取日历失败');
-        if (active) setEvents(d.events || []);
+        const d = (await r.json()) as any;
+        if (!r.ok) throw new Error(d?.error || '读取日历失败');
+        if (active) setEvents(d?.events || []);
       })
       .catch((e) => {
         if (active) setError(e instanceof Error ? e.message : '日历暂不可用');

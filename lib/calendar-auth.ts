@@ -39,7 +39,7 @@ export async function ensurePermissionsSchema(db: ReturnType<typeof getDb>) {
 export function isRootAdminEmail(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.trim().toLowerCase();
-  const configured = (env as Record<string, unknown>).CALENDAR_ADMIN_EMAIL;
+  const configured = (env as unknown as Record<string, unknown>).CALENDAR_ADMIN_EMAIL;
   if (typeof configured === 'string' && configured.trim().toLowerCase() === normalized) {
     return true;
   }

@@ -27,7 +27,7 @@ export default function Materials() {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [account, setAccount] = useState<A | undefined>();
+  const [account, setAccount] = useState<A | null | undefined>(undefined);
   const [canEdit, setCanEdit] = useState(false);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'ready'>('all');
@@ -38,7 +38,7 @@ export default function Materials() {
     if (showLoading) setLoading(true);
     try {
       const r = await fetch('/api/learning-calendar', { cache: 'no-store' });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error || '读取失败');
       setEvents(d.events || []);
       setCanEdit(!!d.canEdit);
@@ -53,7 +53,7 @@ export default function Materials() {
   const loadAccount = async () => {
     try {
       const r = await fetch('/api/account', { cache: 'no-store' });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error();
       setAccount(d);
     } catch {
@@ -144,7 +144,7 @@ export default function Materials() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(next),
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error || '保存失败');
       setDrafts((old) => ({
         ...old,

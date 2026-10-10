@@ -78,7 +78,7 @@ export default function Calendar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
   const [error, setError] = useState('');
-  const [account, setAccount] = useState<A | undefined>();
+  const [account, setAccount] = useState<A | null | undefined>(undefined);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
@@ -102,7 +102,7 @@ export default function Calendar() {
   const load = async () => {
     try {
       const r = await fetch('/api/learning-calendar', { cache: 'no-store' });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error);
       setEvents(d.events || []);
       setCanEdit(!!d.canEdit);
@@ -123,7 +123,7 @@ export default function Calendar() {
     try {
       setPermBusy(true);
       const r = await fetch('/api/calendar-permissions', { cache: 'no-store' });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error);
       setAuthorizedUsers(d.users || []);
       setPermMsg('');
@@ -150,7 +150,7 @@ export default function Calendar() {
           display_name: newName,
         }),
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error);
       setNewEmail('');
       setNewName('');
@@ -170,7 +170,7 @@ export default function Calendar() {
       const r = await fetch(`/api/calendar-permissions?email=${encodeURIComponent(email)}`, {
         method: 'DELETE',
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error);
       await loadPermissions();
     } catch (e) {
@@ -201,7 +201,7 @@ export default function Calendar() {
           remindBeforeDays: reminderDays,
         }),
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error);
       setReminderStatus('✓ 预约提醒已登记，已为您拉起邮件客户端！');
       if (d.mailtoUrl) {
@@ -215,7 +215,7 @@ export default function Calendar() {
   const loadAccount = async () => {
     try {
       const r = await fetch('/api/account', { cache: 'no-store' });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error();
       setAccount(d);
     } catch {
@@ -307,7 +307,7 @@ export default function Calendar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error || '保存失败');
       setEditing(false);
       await load();
@@ -327,7 +327,7 @@ export default function Calendar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(next),
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error || '状态保存失败');
       await load();
     } catch (e) {
@@ -347,7 +347,7 @@ export default function Calendar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(next),
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error || '物资状态保存失败');
       await load();
     } catch (e) {
@@ -363,7 +363,7 @@ export default function Calendar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(next),
       });
-      const d = await r.json();
+      const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error || '批量更新物资状态失败');
       setCurrent(next);
       await load();
@@ -379,7 +379,7 @@ export default function Calendar() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({id}),
     });
-    const d = await r.json();
+    const d = (await r.json()) as any;
     if (!r.ok) {
       setError(d.error || '删除失败');
       return;
@@ -1024,10 +1024,6 @@ export default function Calendar() {
                   <button
                     onClick={() => sendToPricing(current)}
                     className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-white shadow-sm"
-                  >
-                    <Calculator className="w-3.5 h-3.5" /> 带入定价台测算
-                  </button>
-                </div>
                   >
                     <Calculator className="w-3.5 h-3.5" /> 带入定价台测算
                   </button>
