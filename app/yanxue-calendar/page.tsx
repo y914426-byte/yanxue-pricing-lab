@@ -135,8 +135,12 @@ export default function Calendar() {
   };
 
   const addPermissionUser = async () => {
-    if (!newEmail || !newEmail.includes('@')) {
-      alert('请输入有效的邮箱地址');
+    let target = newEmail.trim().toLowerCase();
+    if (/^\d{5,12}$/.test(target)) {
+      target = `${target}@qq.com`;
+    }
+    if (!target || !target.includes('@')) {
+      alert('请输入有效的邮箱地址（支持 QQ 邮箱、纯 QQ 号或 Google 邮箱）');
       return;
     }
     try {
@@ -145,16 +149,16 @@ export default function Calendar() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: newEmail,
+          email: target,
           role: newRole,
-          display_name: newName,
+          display_name: newName.trim(),
         }),
       });
       const d = (await r.json()) as any;
       if (!r.ok) throw new Error(d.error);
       setNewEmail('');
       setNewName('');
-      setPermMsg('✓ 权限已成功更新！');
+      setPermMsg(`✓ 已成功授权成员「${newName.trim() || target}」(${target}) 为 ${newRole === 'admin' ? '管理员' : '策划编辑'}！`);
       await loadPermissions();
     } catch (e) {
       alert(e instanceof Error ? e.message : '授权添加失败');
@@ -1330,40 +1334,52 @@ export default function Calendar() {
               </div>
 
               {/* 授权新成员卡片 */}
-              <div className="p-4 rounded-xl bg-stone-50/80 border border-stone-200/80 space-y-3">
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
                 <h3 className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
                   <UserPlus className="w-3.5 h-3.5 text-emerald-800" /> 授权新协作者账户
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+                  <div className="sm:col-span-6 relative">
+                    <input
+                      placeholder="QQ 邮箱/QQ号 (如 914426@qq.com) 或 Google 邮箱"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 bg-white focus:outline-none focus:border-emerald-700 text-xs font-medium"
+                    />
+                    {/^\d{5,12}$/.test(newEmail.trim()) && (
+                      <button
+                        type="button"
+                        onClick={() => setNewEmail(`${newEmail.trim()}@qq.com`)}
+                        className="absolute right-2 top-2 px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-[#12b7f5] text-[10px] font-bold border border-blue-200"
+                        title="点击快速补全为 QQ 邮箱"
+                      >
+                        补全 @qq.com
+                      </button>
+                    )}
+                  </div>
                   <input
-                    placeholder="成员 Google 邮箱 (必填，如 mentor@gmail.com)"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="sm:col-span-6 p-2 rounded-lg border border-stone-200 bg-white focus:outline-none focus:border-emerald-700"
-                  />
-                  <input
-                    placeholder="导师姓名/称呼 (选填)"
+                    placeholder="导师姓名/称呼 (例如：张导师)"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="sm:col-span-3 p-2 rounded-lg border border-stone-200 bg-white focus:outline-none focus:border-emerald-700"
+                    className="sm:col-span-3 p-2.5 rounded-xl border border-stone-200 bg-white focus:outline-none focus:border-emerald-700 text-xs"
                   />
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as 'editor' | 'admin')}
-                    className="sm:col-span-3 p-2 rounded-lg border border-stone-200 bg-white font-medium focus:outline-none focus:border-emerald-700 text-stone-800"
+                    className="sm:col-span-3 p-2.5 rounded-xl border border-stone-200 bg-white font-medium focus:outline-none focus:border-emerald-700 text-stone-800 text-xs"
                   >
-                    <option value="editor">活动策划/编辑员</option>
-                    <option value="admin">系统管理员</option>
+                    <option value="editor">活动策划 / 编辑人员</option>
+                    <option value="admin">系统主管理员</option>
                   </select>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                   <span className="text-[11px] text-stone-500">
-                    💡 提示：该成员使用所填邮箱登录 Google 后，将自动获得日历编辑与物资标记权限。
+                    💡 提示：支持 QQ 邮箱与 Google 邮箱。协作者使用对应 QQ 账号注册/登录后，将自动激活日历编辑与物资标记权限。
                   </span>
                   <button
                     disabled={permBusy}
                     onClick={addPermissionUser}
-                    className="px-4 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold shadow-sm transition-all disabled:opacity-50 whitespace-nowrap"
                   >
                     {permBusy ? '正在处理…' : '＋ 确认并赋予权限'}
                   </button>
@@ -1385,52 +1401,84 @@ export default function Calendar() {
                   <button
                     onClick={loadPermissions}
                     disabled={permBusy}
-                    className="text-xs text-emerald-800 hover:underline"
+                    className="text-xs text-emerald-800 hover:underline font-semibold"
                   >
                     刷新名单
                   </button>
                 </div>
 
-                <div className="divide-y divide-stone-100 border border-stone-200 rounded-xl overflow-hidden bg-white shadow-inner">
+                <div className="divide-y divide-stone-100 border border-stone-200 rounded-2xl overflow-hidden bg-white shadow-xs">
                   {authorizedUsers.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-stone-400">
-                      暂无添加的额外协作者（当前仅主管理员拥有编辑权限）。在上方输入邮箱即可一键授权。
+                    <div className="p-8 text-center text-xs text-stone-400">
+                      暂无添加的额外协作者（当前仅主管理员拥有编辑权限）。在上方输入 QQ 邮箱即可一键授权。
                     </div>
                   ) : (
-                    authorizedUsers.map((u) => (
-                      <div
-                        key={u.email}
-                        className="p-3.5 flex items-center justify-between gap-3 text-xs hover:bg-stone-50/80 transition-colors"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <strong className="text-stone-900 font-medium">{u.email}</strong>
-                            {u.display_name && (
-                              <span className="text-stone-500 text-[11px]">（{u.display_name}）</span>
-                            )}
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                u.role === 'admin'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}
-                            >
-                              {u.role === 'admin' ? '管理员' : '策划编辑'}
-                            </span>
-                          </div>
-                          <small className="text-stone-400 block mt-0.5 text-[11px]">
-                            授权时间：{new Date(u.created_at).toLocaleDateString('zh-CN')} · 授权人：{u.added_by || '管理员'}
-                          </small>
-                        </div>
-                        <button
-                          disabled={permBusy}
-                          onClick={() => void removePermissionUser(u.email)}
-                          className="text-xs text-stone-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                    authorizedUsers.map((u) => {
+                      const isQQ = u.email.toLowerCase().endsWith('@qq.com');
+                      const qqNum = isQQ ? u.email.split('@')[0] : null;
+
+                      return (
+                        <div
+                          key={u.email}
+                          className="p-3.5 flex items-center justify-between gap-3 text-xs hover:bg-stone-50/80 transition-colors"
                         >
-                          移除权限
-                        </button>
-                      </div>
-                    ))
+                          <div className="flex items-center gap-3">
+                            {isQQ && qqNum ? (
+                              <img
+                                src={`https://q1.qlogo.cn/g?b=qq&nk=${qqNum}&s=40`}
+                                alt="QQ"
+                                className="w-8 h-8 rounded-full border border-stone-200 object-cover flex-shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                {u.display_name ? u.display_name.slice(0, 1) : '协'}
+                              </div>
+                            )}
+
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <strong className="text-stone-900 font-bold">{u.email}</strong>
+                                {u.display_name && (
+                                  <span className="text-stone-600 font-medium text-xs">（{u.display_name}）</span>
+                                )}
+                                {isQQ ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#12b7f5]/15 text-[#0c8ebd] border border-[#12b7f5]/25">
+                                    🐧 QQ 协作者
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-stone-100 text-stone-600">
+                                    🌐 Google
+                                  </span>
+                                )}
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    u.role === 'admin'
+                                      ? 'bg-amber-100 text-[#b45309] border border-amber-200'
+                                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  }`}
+                                >
+                                  {u.role === 'admin' ? '系统管理员' : '策划编辑'}
+                                </span>
+                              </div>
+                              <small className="text-stone-400 block mt-0.5 text-[11px]">
+                                授权时间：{new Date(u.created_at).toLocaleDateString('zh-CN')} · 授权人：{u.added_by || '管理员'}
+                              </small>
+                            </div>
+                          </div>
+
+                          <button
+                            disabled={permBusy}
+                            onClick={() => void removePermissionUser(u.email)}
+                            className="text-xs text-stone-400 hover:text-red-600 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-red-50 font-medium whitespace-nowrap"
+                          >
+                            移除权限
+                          </button>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -1438,7 +1486,7 @@ export default function Calendar() {
               <div className="pt-2 text-right">
                 <button
                   onClick={() => setShowPermissions(false)}
-                  className="px-4 py-2 rounded-xl border border-stone-200 text-stone-700 hover:bg-stone-50 text-xs font-medium"
+                  className="px-5 py-2.5 rounded-xl border border-stone-200 text-stone-700 hover:bg-stone-50 text-xs font-semibold"
                 >
                   完成并关闭
                 </button>

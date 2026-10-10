@@ -39,6 +39,7 @@ export async function GET(request: Request) {
 
       const qqUser = {
         userId: `qq:${openIdData.openid}`,
+        qqNumber: openIdData.openid.slice(0, 10),
         displayName: userData.nickname || `QQ用户_${openIdData.openid.slice(-4)}`,
         email: `${openIdData.openid.slice(0, 10)}@qq.com`,
         avatarUrl: userData.figureurl_qq_1,
@@ -77,12 +78,13 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     const qqNumber = String(body.qq ?? '').trim();
     const nickname = String(body.nickname ?? '').trim();
+    const department = String(body.department ?? '').trim();
 
     if (!qqNumber) {
       return authReply({ error: '请输入 QQ 账号' }, 400);
     }
 
-    const user = normalizeQQAccount(qqNumber, nickname);
+    const user = normalizeQQAccount(qqNumber, nickname, department);
     return await createQQSession(request, user);
   } catch (error) {
     return authReply(

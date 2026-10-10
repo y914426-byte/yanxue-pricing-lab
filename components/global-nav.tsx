@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { QQSignIn } from '@/components/qq-sign-in';
+import { User, LogOut, ShieldCheck, ChevronDown, Sparkles } from 'lucide-react';
 
 export type NavTab = 
   | 'overview' 
@@ -18,7 +20,21 @@ interface GlobalNavProps {
   hideCta?: boolean;
 }
 
+type UserAccount = {
+  displayName: string;
+  email: string;
+  isQQ?: boolean;
+  avatarUrl?: string;
+  role?: string;
+  isAdmin?: boolean;
+  canEdit?: boolean;
+};
+
 export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: GlobalNavProps) {
+  const [account, setAccount] = useState<UserAccount | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [busy, setBusy] = useState(false);
+
   const navItems = [
     { key: 'overview', label: '运营总览', href: '/' },
     { key: 'pricing', label: '研学定价台', href: '/pricing' },
@@ -30,11 +46,43 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
     { key: 'prices', label: '价格数据库', href: '/prices' },
   ];
 
-  // 如果在日历页面，为了避免与页面自身的“新建活动”冲突，默认不重复展示通用新建按钮
+  const fetchAccount = async () => {
+    try {
+      const res = await fetch('/api/account', { cache: 'no-store' });
+      const data = (await res.json()) as any;
+      if (res.ok && data?.user) {
+        setAccount(data.user);
+      } else {
+        setAccount(null);
+      }
+    } catch {
+      setAccount(null);
+    }
+  };
+
+  useEffect(() => {
+    void fetchAccount();
+  }, []);
+
+  const handleSignOut = async () => {
+    setBusy(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setAccount(null);
+      setShowUserMenu(false);
+      window.location.reload();
+    } catch (e) {
+      alert('退出登录失败，请重试');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // 如果在日历页面，避免与页面自身的“新建活动”冲突
   const showDefaultCta = !hideCta && active !== 'calendar';
 
   return (
-    <header className="global-topbar">
+    <header className="global-topbar relative z-40">
       <div className="global-topbar-inner">
         <a className="global-brand" href="/" title="返回江南农耕研学工作台首页">
           <span className="global-brand-mark">耕</span>
@@ -59,8 +107,9 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
           })}
         </nav>
 
-        <div className="global-topbar-actions">
+        <div className="global-topbar-actions flex items-center gap-3">
           {extraRight}
+
           {showDefaultCta && (
             <a
               className="global-btn-cta"
@@ -69,6 +118,105 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
             >
               <span>＋</span> 排期新活动
             </a>
+          )}
+
+          {/* 全局账号状态与 QQ 登录中心 */}
+          {account ? (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 p-1.5 pr-2.5 rounded-xl border border-stone-200/80 bg-white hover:bg-stone-50 transition-all text-xs shadow-xs"
+                title="查看当前登录账号"
+              >
+                {account.avatarUrl ? (
+                  <img
+                    src={account.avatarUrl}
+                    alt={account.displayName}
+                    className="w-6 h-6 rounded-full object-cover border border-stone-200"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-[#27563c] text-white flex items-center justify-center text-[11px] font-bold">
+                    {account.displayName.slice(0, 1)}
+                  </div>
+                )}
+                <span className="font-bold text-stone-800 max-w-[90px] truncate">
+                  {account.displayName}
+                </span>
+                {account.isAdmin ? (
+                  <span className="px-1.5 py-0.2 rounded bg-amber-100 text-[#b45309] text-[10px] font-bold border border-amber-200/80">
+                    管理员
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.2 rounded bg-[#edf5ef] text-[#27563c] text-[10px] font-bold">
+                    已登录
+                  </span>
+                )}
+                <ChevronDown className="w-3 h-3 text-stone-400" />
+              </button>
+
+              {/* 用户信息下拉菜单 */}
+              {showUserMenu && (
+                <div
+                  className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-stone-200 shadow-xl p-4 space-y-3 animate-in fade-in z-50 text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
+                    {account.avatarUrl ? (
+                      <img
+                        src={account.avatarUrl}
+                        alt={account.displayName}
+                        className="w-10 h-10 rounded-full object-cover border border-stone-200"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#27563c] text-white flex items-center justify-center font-bold text-sm">
+                        {account.displayName.slice(0, 1)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <strong className="block text-sm font-bold text-stone-900 truncate">
+                        {account.displayName}
+                      </strong>
+                      <span className="text-[11px] text-stone-500 truncate block">
+                        {account.email}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 text-[11px] text-stone-600 bg-[#f8f7f2] p-2.5 rounded-xl border border-stone-200/60">
+                    <div className="flex justify-between items-center">
+                      <span className="text-stone-400">账号通道：</span>
+                      <span className="font-bold text-stone-700">
+                        {account.isQQ ? '🐧 QQ 企鹅认证' : '🌐 Google 账户'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-stone-400">系统权限：</span>
+                      <span className={`font-bold ${account.isAdmin ? 'text-[#b45309]' : 'text-[#27563c]'}`}>
+                        {account.isAdmin ? '★ 系统主管理员' : account.canEdit ? '✓ 团队编辑人员' : '只读查看人员'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={handleSignOut}
+                      className="w-full py-2 text-center rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-semibold transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> 退出并切换账号
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <QQSignIn
+              variant="compact"
+              triggerText="QQ 注册/登录"
+              onSuccess={fetchAccount}
+            />
           )}
         </div>
       </div>
