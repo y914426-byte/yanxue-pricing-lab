@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { GoogleSignIn } from '@/components/google-sign-in';
+import { QQSignIn } from '@/components/qq-sign-in';
 import { GlobalNav } from '@/components/global-nav';
 import { downloadEventICS, downloadBatchICS } from '@/lib/calendar-ics';
 import { 
@@ -493,17 +494,29 @@ export default function Calendar() {
                   </span>
                 )}
               </div>
-            ) : account?.clientId ? (
-              <GoogleSignIn
-                clientId={account.clientId}
-                onSuccess={() => {
-                  void (async () => {
-                    await loadAccount();
-                    await load();
-                  })();
-                }}
-              />
-            ) : null}
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                {account?.clientId && (
+                  <GoogleSignIn
+                    clientId={account.clientId}
+                    onSuccess={() => {
+                      void (async () => {
+                        await loadAccount();
+                        await load();
+                      })();
+                    }}
+                  />
+                )}
+                <QQSignIn
+                  onSuccess={() => {
+                    void (async () => {
+                      await loadAccount();
+                      await load();
+                    })();
+                  }}
+                />
+              </div>
+            )}
 
             {account?.user && (
               <button

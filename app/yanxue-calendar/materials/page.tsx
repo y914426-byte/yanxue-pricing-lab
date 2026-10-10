@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { GoogleSignIn } from '@/components/google-sign-in';
+import { QQSignIn } from '@/components/qq-sign-in';
 import { GlobalNav } from '@/components/global-nav';
 import { Printer, PackageCheck, AlertCircle, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 
@@ -213,17 +214,29 @@ export default function Materials() {
                   <span className="ml-1.5 text-amber-600 font-bold">（访客只读）</span>
                 )}
               </span>
-            ) : account?.clientId ? (
-              <GoogleSignIn
-                clientId={account.clientId}
-                onSuccess={() => {
-                  void (async () => {
-                    await loadAccount();
-                    await load();
-                  })();
-                }}
-              />
-            ) : null}
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                {account?.clientId && (
+                  <GoogleSignIn
+                    clientId={account.clientId}
+                    onSuccess={() => {
+                      void (async () => {
+                        await loadAccount();
+                        await load();
+                      })();
+                    }}
+                  />
+                )}
+                <QQSignIn
+                  onSuccess={() => {
+                    void (async () => {
+                      await loadAccount();
+                      await load();
+                    })();
+                  }}
+                />
+              </div>
+            )}
 
             {account?.user && (
               <button

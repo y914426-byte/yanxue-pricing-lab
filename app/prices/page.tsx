@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PriceLibrary } from '@/components/price-library';
 import { GoogleSignIn } from '@/components/google-sign-in';
+import { QQSignIn } from '@/components/qq-sign-in';
 import { Button } from '@/components/ui/button';
 import { GlobalNav } from '@/components/global-nav';
 import { demo, type Plan } from '@/lib/pricing';
@@ -78,15 +79,16 @@ export default function PriceManagement() {
                   <p className="text-xs text-stone-600 mt-0.5">
                     <strong className="text-stone-900">{account.user.displayName}</strong> · {account.user.email}
                   </p>
-                ) : account.clientId ? (
-                  <div className="mt-2">
-                    <GoogleSignIn
-                      clientId={account.clientId}
-                      onSuccess={() => void refresh()}
-                    />
-                  </div>
                 ) : (
-                  <p className="text-xs text-amber-700 mt-0.5">登录服务暂不可用，当前处于本地离线浏览模式。</p>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {account.clientId && (
+                      <GoogleSignIn
+                        clientId={account.clientId}
+                        onSuccess={() => void refresh()}
+                      />
+                    )}
+                    <QQSignIn onSuccess={() => void refresh()} />
+                  </div>
                 )}
               </div>
             </div>
