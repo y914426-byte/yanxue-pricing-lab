@@ -18,44 +18,70 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--muted);
   --color-accent-foreground: var(--primary);
-  --color-destructive: #be3546;
+  --color-destructive: #ff2b3a;
   --color-border: var(--border);
   --color-input: var(--border);
   --color-ring: var(--primary);
-  --radius-lg: 14px;
-  --radius-md: 10px;
-  --radius-sm: 6px;
+
+  /* Family Design Tokens */
+  --color-cream-canvas: #fbfaf9;
+  --color-stone-surface: #f2f0ed;
+  --color-sand-surface: #f6f4ef;
+  --color-ink-black: #121212;
+  --color-heading-charcoal: #343433;
+  --color-body-brown: #474645;
+  --color-muted-gray: #7e7e7d;
+  --color-stone-border: #e5d5c3;
+  --color-link-blue: #0086fc;
+  --color-sky-blue: #64c6ff;
+  --color-alt-blue: #00b2ff;
+  --color-grass-green: #00c978;
+  --color-mint: #00ca48;
+  --color-ember-orange: #ff3e00;
+  --color-sun-yellow: #ffcd6c;
+  --color-gold: #d48f00;
+  --color-honey: #ffbb26;
+  --color-coral-pink: #ff58ae;
+  --color-plum-violet: #9f4fff;
+  --color-alert-red: #ff2b3a;
+
+  --radius-lg: 10px;
+  --radius-md: 6px;
+  --radius-sm: 2px;
+  --radius-pill: 9999px;
 }
 
 :root {
-  --background: #f6f8f6;
-  --foreground: #18281e;
+  --background: #fbfaf9;
+  --foreground: #343433;
   --card: #ffffff;
-  --primary: #2b6c4b;
-  --primary-hover: #21593c;
-  --primary-light: #eaf4ed;
-  --primary-border: #c3ded0;
-  --accent-gold: #c28829;
-  --accent-amber: #b45309;
-  --muted: #edf3ee;
-  --muted-foreground: #556b5d;
-  --border: #e0e9e3;
-  --radius: 14px;
+  --primary: #121212;
+  --primary-hover: #262626;
+  --primary-light: #f6f4ef;
+  --primary-border: #f2f0ed;
+  --accent-gold: #d48f00;
+  --accent-orange: #ff3e00;
+  --muted: #f2f0ed;
+  --muted-foreground: #7e7e7d;
+  --border: #f2f0ed;
+  --stone-border: #e5d5c3;
+  --radius: 10px;
 }
 
 .dark {
-  --background: #141f18;
-  --foreground: #edf4ee;
-  --card: #1c2b22;
-  --primary: #63a980;
-  --primary-hover: #7ab994;
-  --primary-light: #25392d;
-  --primary-border: #35503f;
-  --accent-gold: #dfa74b;
-  --accent-amber: #d97706;
-  --muted: #24352a;
-  --muted-foreground: #9eb1a4;
-  --border: #34483b;
+  --background: #121212;
+  --foreground: #fbfaf9;
+  --card: #1c1c1b;
+  --primary: #fbfaf9;
+  --primary-hover: #e5e5e4;
+  --primary-light: #2a2a29;
+  --primary-border: #343433;
+  --accent-gold: #ffcd6c;
+  --accent-orange: #ff3e00;
+  --muted: #262625;
+  --muted-foreground: #a0a09f;
+  --border: #2c2c2b;
+  --stone-border: #444443;
 }
 
 * {
@@ -105,17 +131,17 @@ h1, h2, h3, h4, p {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 66px;
-  background: rgba(255, 255, 255, 0.90);
+  height: 64px;
+  background: rgba(251, 250, 249, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 3px rgba(25, 40, 30, 0.03);
+  border-bottom: 1px solid var(--color-stone-surface, #f2f0ed);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   transition: all 0.2s ease;
 }
 
 .global-topbar-inner {
-  max-width: 1440px;
+  max-width: 1280px;
   height: 100%;
   margin: 0 auto;
   padding: 0 24px;
@@ -131,41 +157,41 @@ h1, h2, h3, h4, p {
   gap: 10px;
   min-width: max-content;
   text-decoration: none;
-  color: var(--foreground);
+  color: var(--color-ink-black, #121212);
   transition: opacity 0.15s;
 }
 
 .global-brand:hover {
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .global-brand-mark {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #2b6c4b 0%, #1f5539 100%);
-  color: #fff;
+  background: var(--color-ink-black, #121212);
+  color: #fbfaf9;
   display: grid;
   place-items: center;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   font-family: "Songti SC", "SimSun", "STSong", serif;
-  box-shadow: 0 2px 6px rgba(43, 108, 75, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .global-brand-text strong {
   display: block;
   font-size: 15px;
-  font-weight: 750;
-  letter-spacing: -0.01em;
-  color: var(--foreground);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-black, #121212);
 }
 
 .global-brand-text small {
   display: block;
   font-size: 9.5px;
-  letter-spacing: 0.12em;
-  color: var(--muted-foreground);
+  letter-spacing: 0.10em;
+  color: var(--color-muted-gray, #7e7e7d);
   margin-top: 1px;
 }
 
@@ -176,7 +202,7 @@ h1, h2, h3, h4, p {
   align-items: center;
   flex: 1;
   min-width: 0;
-  margin: 0 4px;
+  margin: 0 6px;
 }
 
 .global-nav {
@@ -188,8 +214,8 @@ h1, h2, h3, h4, p {
   scroll-behavior: smooth;
   scrollbar-width: none;
   padding: 4px 6px;
-  mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
 }
 
 .global-nav::-webkit-scrollbar {
@@ -199,25 +225,24 @@ h1, h2, h3, h4, p {
 .global-nav-link {
   white-space: nowrap;
   font-size: 13.5px;
-  font-weight: 550;
-  color: var(--muted-foreground);
-  padding: 6.5px 13px;
-  border-radius: 9px;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  font-weight: 500;
+  color: var(--color-body-brown, #474645);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  transition: all 0.16s ease;
   border: 1px solid transparent;
 }
 
 .global-nav-link:hover {
-  color: var(--primary);
-  background: rgba(43, 108, 75, 0.06);
+  color: var(--color-ink-black, #121212);
+  background: var(--color-stone-surface, #f2f0ed);
 }
 
 .global-nav-link.active {
-  color: #1f5539;
-  background: #eaf4ed;
-  border-color: #c8e0d2;
-  font-weight: 700;
-  box-shadow: 0 1px 3px rgba(43, 108, 75, 0.08);
+  color: var(--color-ink-black, #121212);
+  background: var(--color-stone-surface, #f2f0ed);
+  border-color: var(--color-stone-border, #e5d5c3);
+  font-weight: 600;
 }
 
 /* 导航左右滚动轻触按键 */
@@ -229,18 +254,18 @@ h1, h2, h3, h4, p {
   height: 24px;
   border-radius: 50%;
   background: #ffffff;
-  border: 1px solid var(--border);
-  color: var(--muted-foreground);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-stone-surface, #f2f0ed);
+  color: var(--color-muted-gray, #7e7e7d);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
   transition: all 0.15s ease;
   z-index: 2;
 }
 
 .nav-scroll-btn:hover {
-  background: #f0f6f2;
-  color: var(--primary);
-  border-color: var(--primary-border);
+  background: var(--color-stone-surface, #f2f0ed);
+  color: var(--color-ink-black, #121212);
+  border-color: var(--color-stone-border, #e5d5c3);
 }
 
 .global-topbar-actions {
@@ -250,22 +275,24 @@ h1, h2, h3, h4, p {
   min-width: max-content;
 }
 
+/* Family Dark Pill Button */
 .global-btn-cta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--primary);
+  background: var(--color-ink-black, #121212);
   color: #ffffff;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
   padding: 8px 16px;
-  border-radius: 9px;
-  box-shadow: 0 3px 8px rgba(39, 86, 60, 0.25);
-  transition: background 0.16s;
+  border-radius: 9999px;
+  transition: all 0.16s ease;
+  border: 1px solid transparent;
 }
 
 .global-btn-cta:hover {
-  background: var(--primary-hover);
+  background: #262626;
+  transform: translateY(-0.5px);
 }
 
 .global-btn-cta span {

@@ -201,15 +201,15 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
         <div className="global-topbar-actions flex items-center gap-2">
           {extraRight}
 
-          {/* 权限配置专属入口：清爽药丸徽标，仅管理员可见 */}
+          {/* 权限配置专属入口：Family Sand Pill 风格，仅管理员可见 */}
           {account?.isAdmin && (
             <button
               type="button"
               onClick={() => setShowPermModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#eaf4ed] hover:bg-[#d8ebe0] text-[#1e5838] border border-[#c3ded0] font-semibold text-xs shadow-2xs transition-all hover:scale-[1.02]"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f6f4ef] hover:bg-[#ede9e2] text-[#121212] border border-[#e5d5c3] font-semibold text-xs transition-all hover:scale-[1.02]"
               title="研学后台团队权限管理：配置其他成员编辑功能"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#1e5838]" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#d48f00]" />
               <span>团队权限</span>
             </button>
           )}
@@ -230,79 +230,80 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
               <button
                 type="button"
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1.5 pr-2.5 rounded-xl border border-stone-200/80 bg-white hover:bg-stone-50 transition-all text-xs shadow-xs"
+                className="flex items-center gap-2 p-1.5 pr-2.5 rounded-[10px] border border-[#e5d5c3] bg-white hover:bg-[#f6f4ef] transition-all text-xs"
                 title="查看当前登录账号"
               >
                 {account.avatarUrl ? (
                   <img
                     src={account.avatarUrl}
                     alt={account.displayName}
-                    className="w-6 h-6 rounded-full object-cover border border-stone-200"
+                    className="w-6 h-6 rounded-full object-cover border border-[#e5d5c3]"
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-[#27563c] text-white flex items-center justify-center text-[11px] font-bold">
+                  <div className="w-6 h-6 rounded-full bg-[#121212] text-white flex items-center justify-center text-[11px] font-bold">
                     {account.displayName.slice(0, 1)}
                   </div>
                 )}
-                <span className="font-bold text-stone-800 max-w-[90px] truncate">
+                <span className="font-bold text-[#121212] max-w-[90px] truncate">
                   {account.displayName}
                 </span>
                 {account.isAdmin ? (
-                  <span className="px-1.5 py-0.2 rounded bg-amber-100 text-[#b45309] text-[10px] font-bold border border-amber-200/80">
+                  <span className="px-1.5 py-0.5 rounded-[4px] bg-[#ffbb26]/25 text-[#9a6700] text-[10px] font-bold border border-[#ffbb26]/40">
                     管理员
                   </span>
                 ) : (
-                  <span className="px-1.5 py-0.2 rounded bg-[#edf5ef] text-[#27563c] text-[10px] font-bold">
+                  <span className="px-1.5 py-0.5 rounded-[4px] bg-[#00c978]/15 text-[#008f55] text-[10px] font-bold">
                     已登录
                   </span>
                 )}
-                <ChevronDown className="w-3 h-3 text-stone-400" />
+                <ChevronDown className="w-3 h-3 text-[#7e7e7d]" />
               </button>
 
               {/* 用户信息下拉菜单 */}
               {showUserMenu && (
                 <div
-                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-stone-200 shadow-xl p-4 space-y-3 animate-in fade-in z-50 text-xs"
+                  className="absolute right-0 mt-2 w-72 bg-[#ffffff] rounded-[10px] border border-[#e5d5c3] p-4 space-y-3 animate-in fade-in z-50 text-xs"
+                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
+                  <div className="flex items-center gap-3 pb-3 border-b border-[#f2f0ed]">
                     {account.avatarUrl ? (
                       <img
                         src={account.avatarUrl}
                         alt={account.displayName}
-                        className="w-10 h-10 rounded-full object-cover border border-stone-200"
+                        className="w-10 h-10 rounded-full object-cover border border-[#e5d5c3]"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#27563c] text-white flex items-center justify-center font-bold text-sm">
+                      <div className="w-10 h-10 rounded-full bg-[#121212] text-white flex items-center justify-center font-bold text-sm">
                         {account.displayName.slice(0, 1)}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <strong className="block text-sm font-bold text-stone-900 truncate">
+                      <strong className="block text-sm font-bold text-[#121212] truncate">
                         {account.displayName}
                       </strong>
-                      <span className="text-[11px] text-stone-500 truncate block">
+                      <span className="text-[11px] text-[#7e7e7d] truncate block">
                         {account.email}
                       </span>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 text-[11px] text-stone-600 bg-[#f8f7f2] p-2.5 rounded-xl border border-stone-200/60">
+                  <div className="space-y-1.5 text-[11px] text-[#474645] bg-[#f2f0ed] p-2.5 rounded-[10px] border border-[#e5d5c3]/60">
                     <div className="flex justify-between items-center">
-                      <span className="text-stone-400">账号通道：</span>
-                      <span className="font-bold text-stone-700">
+                      <span className="text-[#7e7e7d]">账号通道：</span>
+                      <span className="font-bold text-[#121212]">
                         {account.isQQ ? '🐧 QQ 企鹅认证' : '🌐 Google 账户'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-stone-400">所属部门：</span>
-                      <span className="font-bold text-stone-700">
+                      <span className="text-[#7e7e7d]">所属部门：</span>
+                      <span className="font-bold text-[#121212]">
                         {account.department || '研学项目组'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-stone-400">系统权限：</span>
-                      <span className={`font-bold ${account.isAdmin ? 'text-[#b45309]' : 'text-[#27563c]'}`}>
+                      <span className="text-[#7e7e7d]">系统权限：</span>
+                      <span className={`font-bold ${account.isAdmin ? 'text-[#d48f00]' : 'text-[#008f55]'}`}>
                         {account.isAdmin ? '★ 系统主管理员' : account.canEdit ? '✓ 团队编辑人员' : '只读查看人员'}
                       </span>
                     </div>
@@ -316,13 +317,13 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
                         setShowUserMenu(false);
                         setShowPermModal(true);
                       }}
-                      className="w-full py-2.5 px-3 text-left rounded-xl bg-amber-50 hover:bg-amber-100 text-[#b45309] font-bold text-xs border border-amber-200/90 transition-colors flex items-center justify-between"
+                      className="w-full py-2.5 px-3 text-left rounded-[10px] bg-[#f6f4ef] hover:bg-[#ede9e2] text-[#121212] font-bold text-xs border border-[#e5d5c3] transition-colors flex items-center justify-between"
                     >
                       <span className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-[#b45309]" />
+                        <ShieldCheck className="w-4 h-4 text-[#d48f00]" />
                         配置团队成员与编辑权限
                       </span>
-                      <span className="text-[10px] bg-amber-200/80 text-[#b45309] px-1.5 py-0.5 rounded-md">
+                      <span className="text-[10px] bg-[#ffbb26]/30 text-[#9a6700] px-1.5 py-0.5 rounded-[4px] font-bold">
                         管理
                       </span>
                     </button>
@@ -333,7 +334,7 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
                       type="button"
                       disabled={busy}
                       onClick={handleSignOut}
-                      className="w-full py-2 text-center rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-semibold transition-colors flex items-center justify-center gap-1.5"
+                      className="w-full py-2 text-center rounded-full border border-[#ff2b3a]/30 text-[#ff2b3a] hover:bg-[#ff2b3a]/10 font-semibold transition-colors flex items-center justify-center gap-1.5"
                     >
                       <LogOut className="w-3.5 h-3.5" /> 退出并切换账号
                     </button>

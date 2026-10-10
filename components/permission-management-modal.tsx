@@ -171,21 +171,22 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
   const editorCount = users.filter((u) => u.role === 'editor').length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 backdrop-blur-xs animate-in fade-in">
       <div 
-        className="w-full max-w-2xl bg-white rounded-3xl border border-stone-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-2xl bg-white rounded-[10px] border border-[#e5d5c3] overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150"
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 标题栏 */}
-        <div className="px-6 py-5 bg-gradient-to-r from-[#27563c] to-[#1e4530] text-white flex items-center justify-between">
+        {/* 标题栏 (Ink Black 墨黑庄重大气) */}
+        <div className="px-6 py-5 bg-[#121212] text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-              <ShieldCheck className="w-5 h-5 text-[#e5c178]" />
+            <div className="w-10 h-10 rounded-[8px] bg-white/10 flex items-center justify-center border border-white/20">
+              <ShieldCheck className="w-5 h-5 text-[#ffcd6c]" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 研学后台团队权限管理
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-[#e5c178]">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-[#ffcd6c]">
                   管理员配置中心
                 </span>
               </h2>
@@ -197,7 +198,7 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white/90 hover:text-white transition-all"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white/90 hover:text-white transition-all cursor-pointer"
             title="关闭"
           >
             <X className="w-4 h-4" />
@@ -205,35 +206,35 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
         </div>
 
         {/* 主体可滚动区域 */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs bg-[#fbfaf9]">
           {/* 权限说明与数据看板 */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3.5 rounded-2xl bg-[#f8f7f2] border border-[#e3ded2] space-y-1">
-              <span className="text-[11px] text-stone-500 flex items-center gap-1">
-                <UserCog className="w-3.5 h-3.5 text-[#b45309]" /> 管理员数量
+            <div className="p-3.5 rounded-[10px] bg-white border border-[#e5d5c3] space-y-1">
+              <span className="text-[11px] text-[#7e7e7d] flex items-center gap-1">
+                <UserCog className="w-3.5 h-3.5 text-[#d48f00]" /> 管理员数量
               </span>
-              <strong className="text-xl font-bold text-stone-900 block">
-                {loading ? '…' : `${adminCount + 1}`} <small className="text-xs font-normal text-stone-500">(含主管理员)</small>
+              <strong className="text-xl font-bold text-[#121212] block">
+                {loading ? '…' : `${adminCount + 1}`} <small className="text-xs font-normal text-[#7e7e7d]">(含主管理员)</small>
               </strong>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-[#edf5ef] border border-[#c9e3d2] space-y-1">
-              <span className="text-[11px] text-emerald-700 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-emerald-800" /> 策划编辑人员
+            <div className="p-3.5 rounded-[10px] bg-white border border-[#e5d5c3] space-y-1">
+              <span className="text-[11px] text-[#00c978] flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-[#00c978]" /> 策划编辑人员
               </span>
-              <strong className="text-xl font-bold text-emerald-900 block">
+              <strong className="text-xl font-bold text-[#121212] block">
                 {loading ? '…' : `${editorCount} 位`}
               </strong>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white border border-stone-200 flex flex-col justify-between">
-              <span className="text-[11px] text-stone-500">协同快速指引</span>
+            <div className="p-3.5 rounded-[10px] bg-white border border-[#e5d5c3] flex flex-col justify-between">
+              <span className="text-[11px] text-[#7e7e7d]">协同快速指引</span>
               <button
                 type="button"
                 onClick={handleCopyInviteGuide}
-                className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs transition-colors"
+                className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f6f4ef] hover:bg-[#ede9e2] text-[#121212] font-semibold text-xs border border-[#e5d5c3] transition-colors cursor-pointer"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-[#00c978]" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? '已复制邀请说明' : '复制团队协作说明'}
               </button>
             </div>
@@ -242,25 +243,25 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
           {/* 操作提示消息 */}
           {message && (
             <div
-              className={`p-3.5 rounded-2xl flex items-center gap-2 border ${
+              className={`p-3.5 rounded-[10px] flex items-center gap-2 border ${
                 message.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  : 'bg-red-50 text-red-700 border-red-200'
+                  ? 'bg-[#00c978]/10 text-[#008f55] border-[#00c978]/30'
+                  : 'bg-[#ff2b3a]/10 text-[#ff2b3a] border-[#ff2b3a]/25'
               }`}
             >
               {message.type === 'error' && <AlertCircle className="w-4 h-4 flex-shrink-0" />}
-              <span className="font-medium">{message.text}</span>
+              <span className="font-semibold">{message.text}</span>
             </div>
           )}
 
           {/* 表单：添加 / 分配新成员权限 */}
-          <div className="p-5 rounded-2xl bg-[#fdfbf7] border border-[#ebdccb] space-y-4">
+          <div className="p-5 rounded-[10px] bg-white border border-[#e5d5c3] space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-stone-900 flex items-center gap-2 text-sm">
-                <UserPlus className="w-4 h-4 text-emerald-800" />
+              <h3 className="font-bold text-[#121212] flex items-center gap-2 text-sm">
+                <UserPlus className="w-4 h-4 text-[#121212]" />
                 新增成员或分配权限
               </h3>
-              <span className="text-[11px] text-stone-500">
+              <span className="text-[11px] text-[#7e7e7d]">
                 支持 QQ 邮箱、纯 QQ 号或 Google 邮箱
               </span>
             </div>
@@ -275,13 +276,13 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                     placeholder="成员邮箱或 QQ 号 (如: 12345678)"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-stone-200 bg-white focus:outline-none focus:border-emerald-700 text-xs font-medium"
+                    className="w-full p-2.5 rounded-[8px] border border-[#e5d5c3] bg-white focus:outline-none focus:border-[#121212] text-xs font-medium"
                   />
                   {/^\d{5,12}$/.test(newEmail.trim()) && (
                     <button
                       type="button"
                       onClick={() => setNewEmail(`${newEmail.trim()}@qq.com`)}
-                      className="absolute right-2 top-2 px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-[#12b7f5] text-[10px] font-bold border border-blue-200 transition-colors"
+                      className="absolute right-2 top-2 px-2 py-0.5 rounded-[4px] bg-[#64c6ff]/15 hover:bg-[#64c6ff]/25 text-[#0086fc] text-[10px] font-bold border border-[#64c6ff]/30 transition-colors"
                       title="点击快速补全为 QQ 邮箱"
                     >
                       补全 @qq.com
@@ -296,7 +297,7 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                     placeholder="导师称呼/姓名"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-stone-200 bg-white focus:outline-none focus:border-emerald-700 text-xs font-medium"
+                    className="w-full p-2.5 rounded-[8px] border border-[#e5d5c3] bg-white focus:outline-none focus:border-[#121212] text-xs font-medium"
                   />
                 </div>
 
@@ -305,7 +306,7 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as UserRole)}
-                    className="w-full p-2.5 rounded-xl border border-stone-200 bg-white font-bold text-stone-800 focus:outline-none focus:border-emerald-700 text-xs"
+                    className="w-full p-2.5 rounded-[8px] border border-[#e5d5c3] bg-white font-bold text-[#121212] focus:outline-none focus:border-[#121212] text-xs"
                   >
                     <option value="editor">✓ 策划编辑 (方案/排期/物资)</option>
                     <option value="admin">★ 系统主管理员 (全权管理)</option>
@@ -317,8 +318,8 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                 {/* 所属部门 */}
                 <div className="flex items-center gap-2">
-                  <span className="text-stone-500 text-[11px] flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-stone-400" /> 所属部门：
+                  <span className="text-[#7e7e7d] text-[11px] flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-[#7e7e7d]" /> 所属部门：
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {DEPARTMENTS.map((dept) => (
@@ -326,10 +327,10 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                         key={dept}
                         type="button"
                         onClick={() => setNewDepartment(dept)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
+                        className={`px-2.5 py-1 rounded-[6px] text-[11px] font-medium border transition-colors cursor-pointer ${
                           newDepartment === dept
-                            ? 'bg-emerald-800 text-white border-emerald-800 font-bold'
-                            : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                            ? 'bg-[#121212] text-white border-[#121212] font-bold'
+                            : 'bg-white text-[#474645] border-[#e5d5c3] hover:bg-[#f6f4ef]'
                         }`}
                       >
                         {dept}
@@ -341,7 +342,7 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                 <button
                   type="submit"
                   disabled={busy}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50 whitespace-nowrap self-end sm:self-auto"
+                  className="px-5 py-2.5 rounded-full bg-[#121212] hover:bg-[#2b2b2b] text-white font-semibold text-xs transition-all disabled:opacity-50 whitespace-nowrap self-end sm:self-auto cursor-pointer"
                 >
                   {busy ? '正在授权…' : '＋ 确认并分配权限'}
                 </button>
@@ -352,24 +353,24 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
           {/* 成员权限列表 */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-stone-900 text-xs uppercase tracking-wider flex items-center gap-2">
+              <h3 className="font-bold text-[#121212] text-xs uppercase tracking-wider flex items-center gap-2">
                 已授权团队成员名单 ({users.length})
               </h3>
               <button
                 type="button"
                 onClick={loadUsers}
                 disabled={loading}
-                className="text-emerald-800 hover:underline inline-flex items-center gap-1 font-semibold"
+                className="text-[#121212] hover:text-[#ff3e00] hover:underline inline-flex items-center gap-1 font-semibold cursor-pointer"
               >
                 <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> 刷新名单
               </button>
             </div>
 
-            <div className="divide-y divide-stone-100 border border-stone-200 rounded-2xl overflow-hidden bg-white shadow-xs">
+            <div className="divide-y divide-[#f2f0ed] border border-[#e5d5c3] rounded-[10px] overflow-hidden bg-white">
               {users.length === 0 ? (
-                <div className="p-8 text-center text-stone-400 space-y-2">
+                <div className="p-8 text-center text-[#7e7e7d] space-y-2">
                   <p>当前暂无额外配置的协作者。</p>
-                  <p className="text-[11px] text-stone-500">
+                  <p className="text-[11px] text-[#7e7e7d]">
                     在上方输入成员的 QQ 号或邮箱，即可给导师、策划分配编辑功能！
                   </p>
                 </div>
@@ -381,46 +382,46 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                   return (
                     <div
                       key={u.email}
-                      className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stone-50/80 transition-colors"
+                      className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#fbfaf9] transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         {isQQ && qqNum ? (
                           <img
                             src={`https://q1.qlogo.cn/g?b=qq&nk=${qqNum}&s=40`}
                             alt="QQ"
-                            className="w-9 h-9 rounded-full border border-stone-200 object-cover flex-shrink-0"
+                            className="w-9 h-9 rounded-full border border-[#e5d5c3] object-cover flex-shrink-0"
                             onError={(e) => {
                               (e.target as HTMLElement).style.display = 'none';
                             }}
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#121212] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
                             {u.display_name ? u.display_name.slice(0, 1) : '学'}
                           </div>
                         )}
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <strong className="text-stone-900 font-bold text-xs truncate">
+                            <strong className="text-[#121212] font-bold text-xs truncate">
                               {u.email}
                             </strong>
                             {u.display_name && (
-                              <span className="text-stone-600 font-medium">({u.display_name})</span>
+                              <span className="text-[#474645] font-medium">({u.display_name})</span>
                             )}
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-stone-100 text-stone-600">
+                            <span className="px-2 py-0.5 rounded-[4px] text-[10px] font-semibold bg-[#f2f0ed] text-[#474645] border border-[#e5d5c3]/60">
                               {u.department || '研学项目组'}
                             </span>
                             {isQQ ? (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#12b7f5]/15 text-[#0c8ebd]">
+                              <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-[#64c6ff]/15 text-[#0086fc]">
                                 🐧 QQ 授权
                               </span>
                             ) : (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-stone-100 text-stone-600">
+                              <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-semibold bg-[#f2f0ed] text-[#474645]">
                                 🌐 Google
                               </span>
                             )}
                           </div>
-                          <small className="text-stone-400 block mt-0.5 text-[11px]">
+                          <small className="text-[#7e7e7d] block mt-0.5 text-[11px]">
                             授权时间：{new Date(u.created_at).toLocaleDateString('zh-CN')} · 授权人：{u.added_by || '主管理员'}
                           </small>
                         </div>
@@ -432,12 +433,12 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                           disabled={busy}
                           value={u.role}
                           onChange={(e) => void handleRoleChange(u.email, e.target.value as UserRole)}
-                          className={`p-1.5 rounded-xl border text-xs font-bold transition-all ${
+                          className={`p-1.5 rounded-full border text-xs font-bold transition-all ${
                             u.role === 'admin'
-                              ? 'bg-amber-50 text-[#b45309] border-amber-200'
+                              ? 'bg-[#ffbb26]/20 text-[#9a6700] border-[#ffbb26]/40'
                               : u.role === 'editor'
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : 'bg-stone-50 text-stone-600 border-stone-200'
+                              ? 'bg-[#00c978]/15 text-[#008f55] border-[#00c978]/30'
+                              : 'bg-[#f2f0ed] text-[#474645] border-[#e5d5c3]'
                           }`}
                         >
                           <option value="editor">✓ 策划编辑</option>
@@ -449,7 +450,7 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
                           type="button"
                           disabled={busy}
                           onClick={() => void handleRemove(u.email)}
-                          className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          className="p-1.5 rounded-full text-[#7e7e7d] hover:text-[#ff2b3a] hover:bg-[#ff2b3a]/10 transition-colors cursor-pointer"
                           title="移除该成员权限"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -464,14 +465,14 @@ export function PermissionManagementModal({ isOpen, onClose, onUpdated }: Permis
         </div>
 
         {/* 底部按钮栏 */}
-        <div className="px-6 py-3.5 bg-stone-50 border-t border-stone-200 flex items-center justify-between text-xs">
-          <span className="text-stone-500">
+        <div className="px-6 py-3.5 bg-white border-t border-[#e5d5c3] flex items-center justify-between text-xs">
+          <span className="text-[#7e7e7d]">
             💡 权限修改即刻生效，成员重新登录或刷新页面即可获得对应功能权限。
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 font-bold transition-colors"
+            className="px-4 py-2 rounded-full bg-[#f6f4ef] border border-[#e5d5c3] hover:bg-[#ede9e2] text-[#121212] font-semibold transition-colors cursor-pointer"
           >
             完成并关闭
           </button>
