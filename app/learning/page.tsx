@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { GlobalNav } from '@/components/global-nav';
 import { groupLabel } from '@/lib/scheme-learning';
-import { CuteMascotNotice } from '@/components/farm-mascots';
 import {
   Search,
   Sparkles,
@@ -307,13 +306,6 @@ export default function LearningPage() {
             </Button>
           </div>
         </div>
-
-        {/* 萌宠小助手提醒 */}
-        <CuteMascotNotice
-          mascot="pumpkin"
-          title="南瓜成本智算小助手 · 知识库自学习"
-          message="系统持续沉淀历次研学方案的【活动-成本】映射关系；高频项将被 AI 智能推荐优先直接引用，降低重复测算录入成本！"
-        />
 
         {/* 提示消息 */}
         {error && (

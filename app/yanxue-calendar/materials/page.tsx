@@ -5,7 +5,6 @@ import { GoogleSignIn } from '@/components/google-sign-in';
 import { QQSignIn } from '@/components/qq-sign-in';
 import { GlobalNav } from '@/components/global-nav';
 import { Printer, PackageCheck, AlertCircle, Calendar as CalendarIcon, ArrowRight, Sparkles } from 'lucide-react';
-import { CuteCow, CuteChick, CutePumpkin, CuteCabbage, CuteCarrotBasket, CuteHen, CuteMascotNotice } from '@/components/farm-mascots';
 
 type M = { name: string; qty: string; note: string; done: boolean };
 type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
@@ -195,13 +194,11 @@ export default function Materials() {
         {/* 顶部标题区 */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-4 border-b border-[#e3ded2]">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#27563c] tracking-wider uppercase">
-              <span className="px-2 py-0.5 rounded-full bg-[#edf5ef] border border-[#c9e3d2]">🌾 田园后勤小分队</span>
-              <span>OPERATIONS · MATERIALS HUB</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1e2c22] mt-1.5 flex items-center gap-2.5">
-              <span>研学物资准备中心</span>
-              <span className="text-xl">🥕</span>
+            <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">
+              OPERATIONS · MATERIALS HUB
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1e2c22] mt-1">
+              研学物资准备中心
             </h1>
             <p className="text-xs sm:text-sm text-[#5d6e62] mt-1">
               按月汇总全园活动物资需求；后勤与带班导师协同备货，直观勾选准备状态。
@@ -258,85 +255,53 @@ export default function Materials() {
           </div>
         </div>
 
-        {/* 萌宠小助手提醒 */}
-        <CuteMascotNotice
-          mascot="cow"
-          title="牛牛后勤小管家 · 智能备货指南"
-          message="同名物资已自动合并全月需求！后勤老师备齐物资后，可直接点击右侧按钮标记【已就绪】，带班导师在田间开团无忧！"
-        />
-
         {error && (
-          <div className="p-3.5 bg-red-50 text-red-700 text-xs rounded-2xl border border-red-200 flex items-center gap-2">
+          <div className="p-3.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* 汇总统计看板 (融入小动物与蔬果微徽章) */}
+        {/* 汇总统计看板 - 清晰易读 */}
         <section className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <div className="p-4 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-[#27563c]/30 transition-all flex items-center justify-between">
-            <div>
-              <span className="text-xs text-[#5d6e62] font-medium">本月活动场次</span>
-              <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
-                {monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
-              </strong>
-            </div>
-            <div className="flex flex-col items-center">
-              <CuteCow className="w-10 h-9" />
-              <span className="text-[9px] font-bold text-[#5d6e62]">小奶牛</span>
-            </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+            <span className="text-xs text-[#5d6e62] font-medium block">本月活动场次</span>
+            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+              {monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+            </strong>
+            <span className="text-[11px] text-[#8b998e] mt-0.5 block">已排期活动总数</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-[#27563c]/30 transition-all flex items-center justify-between">
-            <div>
-              <span className="text-xs text-[#5d6e62] font-medium">物资品类总数</span>
-              <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
-                {items.length} <small className="text-xs font-normal text-[#5d6e62]">项</small>
-              </strong>
-            </div>
-            <div className="flex flex-col items-center">
-              <CuteCarrotBasket className="w-9 h-9" />
-              <span className="text-[9px] font-bold text-[#8D6E63]">采摘篮</span>
-            </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+            <span className="text-xs text-[#5d6e62] font-medium block">物资品类总数</span>
+            <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
+              {items.length} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+            </strong>
+            <span className="text-[11px] text-[#8b998e] mt-0.5 block">同名物资自动合并</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-amber-300 transition-all flex items-center justify-between">
-            <div>
-              <span className="text-xs text-[#5d6e62] font-medium">待准备事项</span>
-              <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
-                {pending} <small className="text-xs font-normal text-[#5d6e62]">项</small>
-              </strong>
-            </div>
-            <div className="flex flex-col items-center">
-              <CuteChick className="w-8 h-8" />
-              <span className="text-[9px] font-bold text-[#F57C00]">小雏鸡</span>
-            </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+            <span className="text-xs text-[#5d6e62] font-medium block">待准备事项</span>
+            <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
+              {pending} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+            </strong>
+            <span className="text-[11px] text-[#d97706] mt-0.5 block">待后勤老师备齐</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-emerald-300 transition-all flex items-center justify-between">
-            <div>
-              <span className="text-xs text-[#5d6e62] font-medium">已就绪完成</span>
-              <strong className="block text-2xl font-extrabold text-[#16a34a] mt-1">
-                {ready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
-              </strong>
-            </div>
-            <div className="flex flex-col items-center">
-              <CuteCabbage className="w-8 h-8" />
-              <span className="text-[9px] font-bold text-[#2E7D32]">大白菜</span>
-            </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+            <span className="text-xs text-[#5d6e62] font-medium block">已就绪完成</span>
+            <strong className="block text-2xl font-extrabold text-[#16a34a] mt-1">
+              {ready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+            </strong>
+            <span className="text-[11px] text-[#16a34a] mt-0.5 block">状态已勾选完成</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-orange-300 transition-all flex items-center justify-between col-span-2 sm:col-span-1">
-            <div>
-              <span className="text-xs text-[#5d6e62] font-medium">预计参与总人数</span>
-              <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
-                {people} <small className="text-xs font-normal text-[#5d6e62]">人</small>
-              </strong>
-            </div>
-            <div className="flex flex-col items-center">
-              <CutePumpkin className="w-8 h-8" />
-              <span className="text-[9px] font-bold text-[#E65100]">大南瓜</span>
-            </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs col-span-2 sm:col-span-1">
+            <span className="text-xs text-[#5d6e62] font-medium block">预计参与总人数</span>
+            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+              {people} <small className="text-xs font-normal text-[#5d6e62]">人</small>
+            </strong>
+            <span className="text-[11px] text-[#8b998e] mt-0.5 block">全月营员与带队</span>
           </div>
         </section>
 
@@ -418,22 +383,19 @@ export default function Materials() {
 
         {/* 物资卡片列表 */}
         {loading ? (
-          <div className="py-20 text-center text-xs text-[#5d6e62]">
-            <CuteChick className="w-10 h-10 mx-auto animate-bounce mb-2" />
-            <span>正在读取物资清单…</span>
+          <div className="py-20 text-center text-xs text-[#5d6e62] space-y-2">
+            <PackageCheck className="w-8 h-8 mx-auto animate-pulse text-[#27563c]" />
+            <p>正在读取物资清单…</p>
           </div>
         ) : visible.length === 0 ? (
-          <div className="py-16 bg-white rounded-3xl border-2 border-dashed border-[#e3ded2] text-center space-y-4 max-w-lg mx-auto p-8 shadow-xs">
-            <div className="flex items-center justify-center gap-3">
-              <CuteCow className="w-16 h-14" />
-              <CuteChick className="w-10 h-10" />
-            </div>
+          <div className="py-16 bg-white rounded-2xl border border-dashed border-[#e3ded2] text-center space-y-3 max-w-lg mx-auto p-8 shadow-xs">
+            <PackageCheck className="w-10 h-10 mx-auto text-[#8b998e]" />
             <div>
               <p className="text-base font-bold text-[#1e2c22]">
                 {items.length === 0 ? '本月暂无活动填写物资需求' : '没有符合当前搜索和筛选条件的物资'}
               </p>
               <p className="text-xs text-[#5d6e62] mt-1 leading-relaxed">
-                田园小动物们正悠闲地在草地上吃青草～若有新的研学活动排期，物资中心将自动智能归集。
+                可前往活动日历填写或排期新活动，系统将自动汇总各场活动的物资备货。
               </p>
             </div>
             {canEdit && (
@@ -448,38 +410,21 @@ export default function Materials() {
         ) : (
           <section className="space-y-4">
             {visible.map((item) => {
-              const emoji = /手套|帽子|围裙|胶鞋|草帽|防晒/.test(item.name)
-                ? '🧤'
-                : /菜|萝卜|南瓜|土豆|红薯|玉米|番茄|果|粮|米|米粉|食材/.test(item.name)
-                ? '🥕'
-                : /稻|麦|种|秧|草|水稻|泥/.test(item.name)
-                ? '🌾'
-                : /染|草木染|布|木工|鲁班|画|剪纸|竹编|非遗/.test(item.name)
-                ? '🎨'
-                : /桶|铲|锄|水车|刀|剪|箩筐|篮/.test(item.name)
-                ? '🧺'
-                : /牛|羊|鸡|鸭|猪|兔子|饲料/.test(item.name)
-                ? '🐄'
-                : '📦';
-
               return (
                 <article
                   key={item.name}
-                  className="bg-white rounded-3xl border border-[#e3ded2] shadow-xs overflow-hidden transition-all hover:border-[#27563c]/40"
+                  className="bg-white rounded-2xl border border-[#e3ded2] shadow-xs overflow-hidden transition-all hover:border-[#27563c]/40"
                 >
                   <header className="p-4 bg-[#fbfaf7] border-b border-[#e3ded2] flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-[#edf5ef] border border-[#c9e3d2] flex items-center justify-center text-base shadow-2xs">
-                        {emoji}
-                      </div>
-                      <div>
-                        <h2 className="text-base font-extrabold text-[#1e2c22] flex items-center gap-2">
-                          <span>{item.name}</span>
-                        </h2>
-                        {item.unit && (
-                          <small className="text-xs text-[#5d6e62]">计量单位：{item.unit}</small>
-                        )}
-                      </div>
+                    <div>
+                      <h2 className="text-base font-extrabold text-[#1e2c22]">
+                        {item.name}
+                      </h2>
+                      {item.unit && (
+                        <small className="text-xs text-[#5d6e62] block mt-0.5">
+                          计量单位：{item.unit}
+                        </small>
+                      )}
                     </div>
                     <div className="text-right">
                       <strong className="text-base font-extrabold text-[#27563c]">

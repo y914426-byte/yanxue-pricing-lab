@@ -89,11 +89,8 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
             耕
           </span>
           <div className="global-brand-text">
-            <strong className="flex items-center gap-1.5">
-              <span>江南农耕研学</span>
-              <span className="text-xs">🌾</span>
-            </strong>
-            <small>田园亲子 · 数字化运营平台</small>
+            <strong>江南农耕研学</strong>
+            <small>数字化运营工作台 · OPERATIONS HUB</small>
           </div>
         </a>
 

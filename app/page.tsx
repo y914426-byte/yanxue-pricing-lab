@@ -16,16 +16,6 @@ import {
   Sparkles,
   BookOpen
 } from 'lucide-react';
-import { 
-  CuteCow, 
-  CuteChick, 
-  CutePumpkin, 
-  CuteCabbage, 
-  CuteCarrotBasket, 
-  CuteHen, 
-  FarmPastoralBanner, 
-  CuteMascotNotice 
-} from '@/components/farm-mascots';
 
 type Event = {
   id: string;
@@ -115,53 +105,82 @@ export default function Home() {
       <GlobalNav active="overview" />
 
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 py-8 space-y-10">
-        {/* 田园动物可爱全景横幅 (100% 还原用户照片中的可爱农耕萌宠风格) */}
-        <FarmPastoralBanner
-          title="快乐农耕研学 · 伴学童年每一程"
-          subtitle="水稻稻作探究、二十四节气农事、果蔬采摘与田园小动物亲子互动，数字化全流程赋能研学交付。"
-        />
-
-        {/* Banner Hero */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#27563c] via-[#2f6346] to-[#1e4530] text-white p-8 sm:p-12 shadow-xl shadow-[#27563c]/10">
-          {/* 右侧可爱的萌小牛与小雏鸡插画 */}
-          <div className="absolute right-4 bottom-0 hidden lg:flex items-end gap-2 opacity-90 pointer-events-none select-none">
-            <CuteCow className="w-36 h-28 transform translate-y-2 drop-shadow-md" />
-            <CuteChick className="w-14 h-14 transform -translate-x-3 translate-y-1 drop-shadow-sm" />
-          </div>
-
+        {/* Banner Hero - 聚焦核心业务信息与清晰操作 */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#27563c] via-[#2f6346] to-[#1e4530] text-white p-8 sm:p-10 shadow-xl shadow-[#27563c]/10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="relative z-10 max-w-2xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-white/95 text-xs font-semibold tracking-wider uppercase border border-white/20">
               <Sparkles className="w-3.5 h-3.5 text-[#e5c178]" />
               江南农耕文化园 · 研学数字化运营平台
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
               研学运营工作台
             </h1>
-            <p className="text-white/85 text-base sm:text-lg leading-relaxed">
-              打通方案策划、精准测算、排期日历与物资备货四大关键环节。让每一场农耕研学活动有据可依、高效交付。
+            <p className="text-white/85 text-sm sm:text-base leading-relaxed">
+              覆盖方案策划、精准测算、排期日历与物资备货四大关键环节。让每一场农耕研学活动有据可依、高效协同。
             </p>
             <div className="pt-2 flex flex-wrap gap-3">
               <a
                 href="/pricing"
-                className="inline-flex items-center gap-2 bg-[#d97706] hover:bg-[#b45309] text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-102"
+                className="inline-flex items-center gap-2 bg-[#d97706] hover:bg-[#b45309] text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-[1.02]"
                 style={{ color: '#ffffff', backgroundColor: '#d97706' }}
               >
                 <Calculator className="w-4 h-4 text-white" /> 开始成本测算
               </a>
               <a
                 href="/yanxue-calendar"
-                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/30 shadow-md transition-all hover:scale-102 hover:bg-[#204e33]"
+                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/30 shadow-md transition-all hover:scale-[1.02] hover:bg-[#204e33]"
                 style={{ color: '#ffffff', backgroundColor: '#183f28' }}
               >
                 <CalendarIcon className="w-4 h-4 text-[#e5c178]" /> 查看排期日历 & 提醒
               </a>
               <a
                 href="/scheme-import"
-                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/25 transition-all hover:scale-102 hover:bg-white/20"
+                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/25 transition-all hover:scale-[1.02] hover:bg-white/20"
                 style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
               >
                 <FileText className="w-4 h-4 text-[#e5c178]" /> 导入新方案
               </a>
+            </div>
+          </div>
+
+          {/* 右侧：本月关键运营数据速览 (高信息可读性) */}
+          <div className="w-full lg:w-80 flex-shrink-0 p-5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-white space-y-3">
+            <div className="flex items-center justify-between pb-2.5 border-b border-white/15">
+              <span className="text-xs font-bold text-white/90">本月运营速览</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/20 text-[#e5c178] font-bold">
+                {month}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <span className="text-[11px] text-white/70 block">本月出团场次</span>
+                <strong className="text-2xl font-black text-white">
+                  {loading ? '—' : monthEvents.length} <small className="text-xs font-normal">场</small>
+                </strong>
+              </div>
+              <div>
+                <span className="text-[11px] text-white/70 block">总服务人数</span>
+                <strong className="text-2xl font-black text-[#e5c178]">
+                  {loading ? '—' : monthEvents.reduce((n, e) => n + Number(e.people || 0), 0)}{' '}
+                  <small className="text-xs font-normal">人</small>
+                </strong>
+              </div>
+              <div>
+                <span className="text-[11px] text-white/70 block">待确认活动</span>
+                <strong className="text-xl font-bold text-amber-300">
+                  {loading ? '—' : followups.length} <small className="text-xs font-normal">场</small>
+                </strong>
+              </div>
+              <div>
+                <span className="text-[11px] text-white/70 block">待备货物资</span>
+                <strong className="text-xl font-bold text-emerald-300">
+                  {loading ? '—' : unready} <small className="text-xs font-normal">项</small>
+                </strong>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/70">
+              <span>云端数据实时同步</span>
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
           </div>
         </section>
@@ -180,16 +199,14 @@ export default function Home() {
             {/* 01 方案库 */}
             <a
               href="/schemes"
-              className="group p-6 rounded-3xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
-                    <CuteHen className="w-8 h-8" />
+                  <div className="w-11 h-11 rounded-xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                    <BookOpen className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#f8f7f2] border border-[#e3ded2] text-[#5d6e62]">
-                    🌾 精品教案
-                  </span>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 01</span>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
@@ -209,16 +226,14 @@ export default function Home() {
             {/* 02 定价台 */}
             <a
               href="/pricing"
-              className="group p-6 rounded-3xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[#fef7ec] text-[#d97706] flex items-center justify-center">
-                    <CutePumpkin className="w-8 h-8" />
+                  <div className="w-11 h-11 rounded-xl bg-[#fef7ec] text-[#d97706] flex items-center justify-center">
+                    <Calculator className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#fef7ec] border border-[#fbd38d] text-[#b45309]">
-                    💰 成本测算
-                  </span>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 02</span>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
@@ -238,16 +253,14 @@ export default function Home() {
             {/* 03 日历台 */}
             <a
               href="/yanxue-calendar"
-              className="group p-6 rounded-3xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
-                    <CuteCow className="w-9 h-7" />
+                  <div className="w-11 h-11 rounded-xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                    <CalendarIcon className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#edf5ef] border border-[#c9e3d2] text-[#27563c]">
-                    📅 出团日程
-                  </span>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 03</span>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
@@ -267,16 +280,14 @@ export default function Home() {
             {/* 04 物资中心 */}
             <a
               href="/yanxue-calendar/materials"
-              className="group p-6 rounded-3xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[#f0f7f3] text-[#16a34a] flex items-center justify-center">
-                    <CuteCarrotBasket className="w-8 h-8" />
+                  <div className="w-11 h-11 rounded-xl bg-[#f0f7f3] text-[#16a34a] flex items-center justify-center">
+                    <PackageCheck className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#f0f7f3] border border-[#bbf7d0] text-[#16a34a]">
-                    🥕 备货协同
-                  </span>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 04</span>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
@@ -298,7 +309,7 @@ export default function Home() {
         {/* 运营概览与近期活动 */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 指标看板 */}
-          <div className="lg:col-span-1 p-6 rounded-3xl bg-white border border-[#e3ded2] shadow-xs space-y-6">
+          <div className="lg:col-span-1 p-6 rounded-2xl bg-white border border-[#e3ded2] shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">THIS MONTH</span>
@@ -310,42 +321,42 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-2 gap-3.5">
-              <div className="p-3.5 rounded-2xl bg-[#f8f7f2] border border-[#e3ded2] flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-[#5d6e62]">本月活动</span>
-                  <strong className="block text-xl font-extrabold text-[#1e2c22] mt-0.5">
-                    {loading ? '—' : monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
-                  </strong>
+              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <div className="flex items-center justify-between text-[#5d6e62] mb-1">
+                  <span className="text-xs">本月活动</span>
+                  <CalendarIcon className="w-4 h-4 text-[#27563c]" />
                 </div>
-                <CuteCow className="w-8 h-7 opacity-75" />
+                <strong className="block text-2xl font-extrabold text-[#1e2c22]">
+                  {loading ? '—' : monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+                </strong>
               </div>
-              <div className="p-3.5 rounded-2xl bg-[#f8f7f2] border border-[#e3ded2] flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-[#5d6e62]">预计参与</span>
-                  <strong className="block text-xl font-extrabold text-[#27563c] mt-0.5">
-                    {loading ? '—' : monthEvents.reduce((n, e) => n + Number(e.people || 0), 0)}{' '}
-                    <small className="text-xs font-normal text-[#5d6e62]">人</small>
-                  </strong>
+              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <div className="flex items-center justify-between text-[#5d6e62] mb-1">
+                  <span className="text-xs">预计参与</span>
+                  <Users className="w-4 h-4 text-[#27563c]" />
                 </div>
-                <CutePumpkin className="w-7 h-7 opacity-75" />
+                <strong className="block text-2xl font-extrabold text-[#27563c]">
+                  {loading ? '—' : monthEvents.reduce((n, e) => n + Number(e.people || 0), 0)}{' '}
+                  <small className="text-xs font-normal text-[#5d6e62]">人</small>
+                </strong>
               </div>
-              <div className="p-3.5 rounded-2xl bg-[#f8f7f2] border border-[#e3ded2] flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-[#5d6e62]">待跟进确认</span>
-                  <strong className="block text-xl font-extrabold text-[#d97706] mt-0.5">
-                    {loading ? '—' : followups.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
-                  </strong>
+              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <div className="flex items-center justify-between text-[#5d6e62] mb-1">
+                  <span className="text-xs">待跟进确认</span>
+                  <Clock className="w-4 h-4 text-[#d97706]" />
                 </div>
-                <CuteChick className="w-7 h-7 opacity-75" />
+                <strong className="block text-2xl font-extrabold text-[#d97706]">
+                  {loading ? '—' : followups.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+                </strong>
               </div>
-              <div className="p-3.5 rounded-2xl bg-[#f8f7f2] border border-[#e3ded2] flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-[#5d6e62]">待准备物资</span>
-                  <strong className="block text-xl font-extrabold text-[#b45309] mt-0.5">
-                    {loading ? '—' : unready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
-                  </strong>
+              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <div className="flex items-center justify-between text-[#5d6e62] mb-1">
+                  <span className="text-xs">待准备物资</span>
+                  <PackageCheck className="w-4 h-4 text-[#b45309]" />
                 </div>
-                <CuteCarrotBasket className="w-7 h-7 opacity-75" />
+                <strong className="block text-2xl font-extrabold text-[#b45309]">
+                  {loading ? '—' : unready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+                </strong>
               </div>
             </div>
 
