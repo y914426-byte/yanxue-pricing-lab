@@ -27,6 +27,15 @@ import {
   UserPlus,
   Download
 } from 'lucide-react';
+import { 
+  CuteCow, 
+  CuteChick, 
+  CutePumpkin, 
+  CuteCabbage, 
+  CuteCarrotBasket, 
+  CuteHen, 
+  CuteMascotNotice 
+} from '@/components/farm-mascots';
 
 type M = { name: string; qty: string; note: string; done: boolean };
 type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
@@ -533,8 +542,15 @@ export default function Calendar() {
           </div>
         </div>
 
+        {/* 萌宠小助手提醒 */}
+        <CuteMascotNotice
+          mascot="chick"
+          title="雏鸡研学日历小助手 · 排期与协同贴士"
+          message="支持全月出团日程把控、一键导出手机/电脑系统日历 (.ics) 与活动前夕定时提醒，带班老师与后勤备货高效联动！"
+        />
+
         {error && (
-          <div className="p-4 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-center justify-between shadow-sm">
+          <div className="p-4 bg-red-50 text-red-700 text-xs rounded-2xl border border-red-200 flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
@@ -543,35 +559,50 @@ export default function Calendar() {
           </div>
         )}
 
-        {/* 月度统计卡片：清爽高雅配色 */}
+        {/* 月度统计卡片：可爱田园动物配色 */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
-            <span className="text-xs font-medium text-stone-500">本月活动场次</span>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-2xl font-serif font-bold text-stone-900">{stats.total}</span>
-              <span className="text-xs text-stone-500">场</span>
+          <div className="p-5 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-[#27563c]/40 transition-all flex items-center justify-between">
+            <div>
+              <span className="text-xs font-medium text-stone-500">本月活动场次</span>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-2xl font-serif font-bold text-stone-900">{stats.total}</span>
+                <span className="text-xs text-stone-500">场</span>
+              </div>
             </div>
+            <CuteCow className="w-10 h-8 opacity-80" />
           </div>
-          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
-            <span className="text-xs font-medium text-stone-500">预计参与总人数</span>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-2xl font-serif font-bold text-[#27563c]">{stats.people.toLocaleString()}</span>
-              <span className="text-xs text-stone-500">人</span>
+
+          <div className="p-5 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-[#27563c]/40 transition-all flex items-center justify-between">
+            <div>
+              <span className="text-xs font-medium text-stone-500">预计参与总人数</span>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-2xl font-serif font-bold text-[#27563c]">{stats.people.toLocaleString()}</span>
+                <span className="text-xs text-stone-500">人</span>
+              </div>
             </div>
+            <CutePumpkin className="w-9 h-9 opacity-80" />
           </div>
-          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
-            <span className="text-xs font-medium text-stone-500">已确定活动</span>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-2xl font-serif font-bold text-emerald-700">{stats.confirmed}</span>
-              <span className="text-xs text-stone-500">场</span>
+
+          <div className="p-5 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-emerald-300 transition-all flex items-center justify-between">
+            <div>
+              <span className="text-xs font-medium text-stone-500">已确定活动</span>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-2xl font-serif font-bold text-emerald-700">{stats.confirmed}</span>
+                <span className="text-xs text-stone-500">场</span>
+              </div>
             </div>
+            <CuteHen className="w-9 h-9 opacity-80" />
           </div>
-          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
-            <span className="text-xs font-medium text-stone-500">待跟进预约</span>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-2xl font-serif font-bold text-[#d97706]">{stats.pending}</span>
-              <span className="text-xs text-stone-500">场</span>
+
+          <div className="p-5 rounded-2xl bg-white border border-[#e3ded2] shadow-xs hover:border-amber-300 transition-all flex items-center justify-between">
+            <div>
+              <span className="text-xs font-medium text-stone-500">待跟进预约</span>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-2xl font-serif font-bold text-[#d97706]">{stats.pending}</span>
+                <span className="text-xs text-stone-500">场</span>
+              </div>
             </div>
+            <CuteChick className="w-8 h-8 opacity-80" />
           </div>
         </section>
 

@@ -210,7 +210,7 @@ h1, h2, h3, h4, p {
   align-items: center;
   gap: 6px;
   background: var(--primary);
-  color: #ffffff !important;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 650;
   padding: 8px 16px;
@@ -226,6 +226,28 @@ h1, h2, h3, h4, p {
 .global-btn-cta span {
   font-size: 15px;
   font-weight: 700;
+}
+
+.global-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: var(--primary);
+  border: 1.5px solid rgba(39, 86, 60, 0.35);
+  font-size: 13px;
+  font-weight: 650;
+  padding: 7px 15px;
+  border-radius: 9px;
+  box-shadow: 0 1px 3px rgba(30, 44, 34, 0.04);
+  transition: all 0.16s ease;
+  cursor: pointer;
+}
+
+.global-btn-secondary:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .global-footer {

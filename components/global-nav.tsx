@@ -84,11 +84,16 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
   return (
     <header className="global-topbar relative z-40">
       <div className="global-topbar-inner">
-        <a className="global-brand" href="/" title="返回江南农耕研学工作台首页">
-          <span className="global-brand-mark">耕</span>
+        <a className="global-brand group" href="/" title="返回江南农耕研学工作台首页">
+          <span className="global-brand-mark relative overflow-hidden group-hover:scale-105 transition-transform">
+            耕
+          </span>
           <div className="global-brand-text">
-            <strong>江南农耕研学</strong>
-            <small>运营工作台 · OPERATIONS HUB</small>
+            <strong className="flex items-center gap-1.5">
+              <span>江南农耕研学</span>
+              <span className="text-xs">🌾</span>
+            </strong>
+            <small>田园亲子 · 数字化运营平台</small>
           </div>
         </a>
 
