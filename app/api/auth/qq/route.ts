@@ -59,9 +59,16 @@ export async function GET(request: Request) {
   }
 
   // 返回当前的配置情况
+  const hasOfficialOAuth = !!(qqAppId && qqAppKey);
+  const redirectUri = `${url.origin}/api/auth/qq`;
+  const authorizeUrl = hasOfficialOAuth
+    ? `https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id=${qqAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=get_user_info&state=${encodeURIComponent(redirectTarget)}`
+    : null;
+
   return authReply({
-    hasOfficialOAuth: !!(qqAppId && qqAppKey),
+    hasOfficialOAuth,
     appId: typeof qqAppId === 'string' ? qqAppId : null,
+    authorizeUrl,
   });
 }
 

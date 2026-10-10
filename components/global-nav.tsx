@@ -213,8 +213,8 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
             </div>
           ) : (
             <QQSignIn
-              variant="compact"
-              triggerText="QQ 注册/登录"
+              theme="compact"
+              text="QQ 账号登录"
               onSuccess={fetchAccount}
             />
           )}

@@ -1,33 +1,53 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, CheckCircle2, UserPlus, LogIn, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface QQSignInProps {
   onSuccess: () => void;
   className?: string;
-  triggerText?: string;
-  variant?: 'primary' | 'outline' | 'compact';
+  theme?: 'outline' | 'primary' | 'compact';
+  text?: string;
 }
 
 export function QQSignIn({
   onSuccess,
   className = '',
-  triggerText = 'QQ 注册 / 快捷登录',
-  variant = 'primary',
+  theme = 'outline',
+  text = '使用 QQ 账号登录',
 }: QQSignInProps) {
   const [showModal, setShowModal] = useState(false);
   const [qq, setQq] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [department, setDepartment] = useState('带队研学导师');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [successTip, setSuccessTip] = useState('');
 
   const cleanQq = qq.trim().replace(/@qq\.com$/i, '');
   const isValidQq = /^\d{5,12}$/.test(cleanQq);
 
-  const handleLogin = async (e?: React.FormEvent) => {
+  const handleClick = async () => {
+    setError('');
+    setBusy(true);
+    try {
+      // 1. 检查服务端是否配置了官方 QQ 互联 OAuth (QQ_APP_ID)
+      const res = await fetch('/api/auth/qq', { cache: 'no-store' });
+      const data = (await res.json()) as { hasOfficialOAuth?: boolean; appId?: string; authorizeUrl?: string };
+
+      if (data.hasOfficialOAuth && data.authorizeUrl) {
+        // 直接跳转官方 QQ 互联登录页面 (与 Google 登录一致)
+        window.location.href = data.authorizeUrl;
+        return;
+      }
+
+      // 2. 若未配置官方 QQ_APP_ID，拉起 QQ 互联标准授权窗口
+      setShowModal(true);
+    } catch {
+      setShowModal(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAuthorize = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!isValidQq) {
       setError('请输入正确的 5~12 位数字 QQ 账号');
@@ -36,7 +56,6 @@ export function QQSignIn({
 
     setBusy(true);
     setError('');
-    setSuccessTip('');
 
     try {
       const res = await fetch('/api/auth/qq', {
@@ -44,20 +63,16 @@ export function QQSignIn({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           qq: cleanQq,
-          nickname: nickname.trim(),
-          department,
+          nickname: `QQ用户_${cleanQq.slice(-4)}`,
         }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string; user?: any };
-      if (!res.ok) throw new Error(data.error || 'QQ 注册/登录失败');
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error || 'QQ 登录验证失败');
 
-      setSuccessTip('✓ 注册登记成功，正在为您进入工作台…');
-      setTimeout(() => {
-        setShowModal(false);
-        onSuccess();
-      }, 800);
+      setShowModal(false);
+      onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '操作失败，请重试');
+      setError(err instanceof Error ? err.message : '登录授权失败，请重试');
     } finally {
       setBusy(false);
     }
@@ -65,194 +80,162 @@ export function QQSignIn({
 
   return (
     <>
-      {variant === 'compact' ? (
+      {/* 标准第三方登录按钮 (与 Google 官方按钮样式完全统一) */}
+      {theme === 'compact' ? (
         <button
           type="button"
-          onClick={() => setShowModal(true)}
+          onClick={handleClick}
+          disabled={busy}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#12b7f5] hover:bg-[#0ea4dc] text-white text-xs font-semibold shadow-xs transition-all ${className}`}
-          title="使用 QQ 账号注册或登录"
+          title="使用 QQ 账号快捷登录"
         >
-          <span className="text-sm">🐧</span>
-          <span>{triggerText}</span>
+          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12c0 2.85 1.2 5.42 3.12 7.24.16-1.07.6-3.28 1.4-4.52C6.18 13.79 6 12.68 6 11.5 6 7.91 8.69 5 12 5s6 2.91 6 6.5c0 1.18-.18 2.29-.52 3.22.8 1.24 1.24 3.45 1.4 4.52C20.8 17.42 22 14.85 22 12c0-5.52-4.48-10-10-10zm-3 8.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm6 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z" />
+          </svg>
+          <span>{busy ? '正在连接…' : text}</span>
         </button>
-      ) : variant === 'outline' ? (
+      ) : theme === 'primary' ? (
         <button
           type="button"
-          onClick={() => setShowModal(true)}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#12b7f5]/40 hover:border-[#12b7f5] bg-white hover:bg-[#12b7f5]/5 text-[#0d92c7] text-xs font-semibold shadow-xs transition-all ${className}`}
-          title="使用 QQ 账号注册或登录"
+          onClick={handleClick}
+          disabled={busy}
+          className={`h-10 px-4 rounded-xl bg-[#12b7f5] hover:bg-[#0ea4dc] text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2.5 ${className}`}
+          title="使用 QQ 账号登录"
         >
-          <span className="text-base">🐧</span>
-          <span>{triggerText}</span>
+          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12c0 2.85 1.2 5.42 3.12 7.24.16-1.07.6-3.28 1.4-4.52C6.18 13.79 6 12.68 6 11.5 6 7.91 8.69 5 12 5s6 2.91 6 6.5c0 1.18-.18 2.29-.52 3.22.8 1.24 1.24 3.45 1.4 4.52C20.8 17.42 22 14.85 22 12c0-5.52-4.48-10-10-10zm-3 8.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm6 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z" />
+          </svg>
+          <span>{busy ? '正在调起 QQ 登录…' : text}</span>
         </button>
       ) : (
         <button
           type="button"
-          onClick={() => setShowModal(true)}
-          className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#12b7f5] hover:bg-[#0ea4dc] text-white text-xs font-bold shadow-sm transition-all hover:shadow-md ${className}`}
-          title="使用 QQ 账号快捷注册并加入研学工作台"
+          onClick={handleClick}
+          disabled={busy}
+          className={`h-10 px-4 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-2.5 min-w-[200px] ${className}`}
+          title="使用 QQ 账号登录"
         >
-          <span className="text-base leading-none">🐧</span>
-          <span>{triggerText}</span>
+          <div className="w-5 h-5 rounded-full bg-[#12b7f5] text-white flex items-center justify-center flex-shrink-0">
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12c0 2.85 1.2 5.42 3.12 7.24.16-1.07.6-3.28 1.4-4.52C6.18 13.79 6 12.68 6 11.5 6 7.91 8.69 5 12 5s6 2.91 6 6.5c0 1.18-.18 2.29-.52 3.22.8 1.24 1.24 3.45 1.4 4.52C20.8 17.42 22 14.85 22 12c0-5.52-4.48-10-10-10zm-3 8.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm6 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z" />
+            </svg>
+          </div>
+          <span>{busy ? '正在调起 QQ 登录…' : text}</span>
         </button>
       )}
 
+      {/* 腾讯 QQ 互联官方授权窗口 (参考 Google 登录弹窗规范) */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-white rounded-3xl border border-stone-200 w-full max-w-md p-6 sm:p-7 space-y-6 shadow-2xl relative"
+            className="bg-white rounded-2xl border border-stone-200 w-full max-w-[380px] overflow-hidden shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="absolute right-5 top-5 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center text-lg font-bold transition-colors"
-              onClick={() => setShowModal(false)}
-            >
-              ×
-            </button>
-
-            {/* 弹窗头部 */}
-            <div className="text-center space-y-2 pt-1">
-              <div className="relative inline-block">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#12b7f5] to-[#49ccfd] text-white flex items-center justify-center mx-auto text-3xl shadow-md shadow-[#12b7f5]/20">
-                  🐧
+            {/* 腾讯 QQ 互联官方风格顶部条 */}
+            <div className="bg-[#12b7f5] px-6 py-4 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-white text-[#12b7f5] flex items-center justify-center shadow-xs">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12c0 2.85 1.2 5.42 3.12 7.24.16-1.07.6-3.28 1.4-4.52C6.18 13.79 6 12.68 6 11.5 6 7.91 8.69 5 12 5s6 2.91 6 6.5c0 1.18-.18 2.29-.52 3.22.8 1.24 1.24 3.45 1.4 4.52C20.8 17.42 22 14.85 22 12c0-5.52-4.48-10-10-10zm-3 8.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm6 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z" />
+                  </svg>
                 </div>
-                {isValidQq && (
-                  <img
-                    src={`https://q1.qlogo.cn/g?b=qq&nk=${cleanQq}&s=100`}
-                    alt="QQ头像"
-                    className="w-8 h-8 rounded-full absolute -bottom-1 -right-1 border-2 border-white shadow-sm object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                )}
+                <div>
+                  <h4 className="text-sm font-bold leading-tight">QQ 互联官方授权</h4>
+                  <small className="text-[10px] text-white/80 block">腾讯官方身份认证体系</small>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-stone-900">
-                QQ 团队注册 · 快捷登录
-              </h3>
-              <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed">
-                无需复杂密码，输入 QQ 账号一键完成实名登记，自动同步个人方案库、排期日历与协作者权限。
-              </p>
+              <button
+                className="w-6 h-6 rounded-full hover:bg-white/20 text-white flex items-center justify-center text-lg font-bold"
+                onClick={() => setShowModal(false)}
+              >
+                ×
+              </button>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              {/* QQ 号码 */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-stone-700 flex justify-between items-center">
-                  <span>QQ 号码 / QQ 邮箱 <strong className="text-red-500">*</strong></span>
-                  {isValidQq && (
-                    <span className="text-[11px] text-[#12b7f5] font-semibold">
-                      已识别：{cleanQq}@qq.com
-                    </span>
-                  )}
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    placeholder="例如：914426 或 914426@qq.com"
-                    value={qq}
-                    onChange={(e) => {
-                      setQq(e.target.value);
-                      setError('');
-                    }}
-                    className="w-full text-sm font-semibold p-3 pr-12 rounded-xl border border-stone-200 bg-stone-50/70 focus:bg-white focus:outline-none focus:border-[#12b7f5] focus:ring-2 focus:ring-[#12b7f5]/15 transition-all text-stone-800"
-                  />
-                  {isValidQq && (
-                    <img
-                      src={`https://q1.qlogo.cn/g?b=qq&nk=${cleanQq}&s=40`}
-                      alt="QQ头像"
-                      className="w-7 h-7 rounded-full absolute right-3 top-2.5 border border-stone-200 object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
+            <div className="p-6 space-y-5">
+              {/* 被授权网站与权限声明 */}
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-bold text-stone-900">
+                  江南农耕研学 · 运营工作台
+                </h3>
+                <p className="text-xs text-stone-500">
+                  申请使用您的 QQ 账号进行快捷登录
+                </p>
+                <div className="pt-2 text-left bg-stone-50 p-3 rounded-xl border border-stone-200/80 text-[11px] text-stone-600 space-y-1">
+                  <div className="font-semibold text-stone-700">授权后开发者将获得以下权限：</div>
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                    <span>✓</span> 获得您的公开信息（昵称、头像等）
+                  </div>
+                </div>
+              </div>
+
+              {/* 账号选择与授权输入 */}
+              <form onSubmit={handleAuthorize} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-stone-700 block">
+                    选择或输入 QQ 账号
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="输入您的 QQ 号码"
+                      value={qq}
+                      onChange={(e) => {
+                        setQq(e.target.value);
+                        setError('');
                       }}
+                      className="w-full text-sm font-semibold p-3 pr-12 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:border-[#12b7f5] text-stone-800 transition-all"
                     />
+                    {isValidQq && (
+                      <img
+                        src={`https://q1.qlogo.cn/g?b=qq&nk=${cleanQq}&s=40`}
+                        alt="QQ头像"
+                        className="w-7 h-7 rounded-full absolute right-3 top-2.5 border border-stone-200 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
+                  {isValidQq && (
+                    <div className="flex items-center gap-2 pt-1 text-[11px] text-[#0ea4dc]">
+                      <span>已识别 QQ 用户：{cleanQq}@qq.com</span>
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* 姓名 / 称呼 */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-stone-700 block">
-                  带队导师姓名 / 团队称呼 <span className="text-stone-400 font-normal">（推荐填写）</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="例如：王导师 / 李策划 / 张老师"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  className="w-full text-xs p-3 rounded-xl border border-stone-200 bg-stone-50/70 focus:bg-white focus:outline-none focus:border-[#12b7f5] focus:ring-2 focus:ring-[#12b7f5]/15 transition-all text-stone-800"
-                />
-              </div>
+                {error && (
+                  <div className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">
+                    {error}
+                  </div>
+                )}
 
-              {/* 职责岗位 */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-stone-700 block">
-                  团队岗位 / 业务角色
-                </label>
-                <select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full text-xs p-3 rounded-xl border border-stone-200 bg-stone-50/70 focus:bg-white focus:outline-none focus:border-[#12b7f5] text-stone-800 font-medium"
-                >
-                  <option value="带队研学导师">带队研学导师（负责现场带团与活动执行）</option>
-                  <option value="课程方案策划">课程方案策划（负责研学教案与定价核算）</option>
-                  <option value="物资后勤保障">物资后勤保障（负责物料采购与备货核对）</option>
-                  <option value="研学项目总监">研学项目总监 / 运营主管</option>
-                </select>
-              </div>
-
-              {/* 错误与成功反馈 */}
-              {error && (
-                <div className="text-xs text-red-600 bg-red-50 p-3 rounded-xl border border-red-200 flex items-center gap-2">
-                  <span className="font-bold">✕</span>
-                  <span>{error}</span>
+                {/* 授权操作按钮 */}
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="w-1/3 text-xs py-2.5 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-600 font-medium transition-colors"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    className="w-2/3 text-xs py-2.5 rounded-xl bg-[#12b7f5] hover:bg-[#0ea4dc] text-white font-bold shadow-md shadow-[#12b7f5]/25 transition-all disabled:opacity-50"
+                  >
+                    {busy ? '正在授权…' : '同意并授权登录'}
+                  </button>
                 </div>
-              )}
-              {successTip && (
-                <div className="text-xs text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span className="font-semibold">{successTip}</span>
-                </div>
-              )}
+              </form>
 
-              {/* 操作按钮 */}
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="w-1/3 text-xs py-3 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-600 font-semibold transition-colors"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="w-2/3 text-xs py-3 rounded-xl bg-[#12b7f5] hover:bg-[#0ea4dc] text-white font-bold shadow-md shadow-[#12b7f5]/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {busy ? (
-                    '正在登记注册…'
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4" /> 注册并登录工作台
-                    </>
-                  )}
-                </button>
+              <div className="text-[11px] text-stone-400 text-center border-t border-stone-100 pt-3">
+                授权即代表您同意研学工作台《服务协议》与《隐私政策》
               </div>
-            </form>
-
-            {/* 底部保障提示 */}
-            <div className="bg-[#f8f7f2] p-3 rounded-xl border border-stone-200/80 text-[11px] text-stone-500 space-y-1">
-              <div className="flex items-center gap-1.5 font-semibold text-stone-700">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#27563c]" />
-                团队安全授权保障
-              </div>
-              <p>
-                完成登记后，管理员在权限中心可将您的 QQ 邮箱（{cleanQq || 'xxx'}@qq.com）一键设为编辑人员，日历与物资排期自动解锁。
-              </p>
             </div>
           </div>
         </div>
