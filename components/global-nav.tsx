@@ -216,11 +216,12 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
 
           {showDefaultCta && (
             <a
-              className="global-btn-cta"
+              className="global-btn-cta btn-dark-pill"
               href="/yanxue-calendar?action=new"
               title="排期并安排新活动"
+              style={{ backgroundColor: '#121212', color: '#ffffff' }}
             >
-              <span>＋</span> 排期新活动
+              <span style={{ color: '#ffffff' }}>＋</span> <span style={{ color: '#ffffff' }}>排期新活动</span>
             </a>
           )}
 

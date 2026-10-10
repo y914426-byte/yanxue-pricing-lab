@@ -17,6 +17,7 @@ import {
   BookOpen,
   ShieldCheck
 } from 'lucide-react';
+import { MascotClusterLeft, MascotClusterRight } from '@/components/family-mascots';
 
 type Event = {
   id: string;
@@ -109,79 +110,112 @@ export default function Home() {
       <GlobalNav active="overview" />
 
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 py-8 space-y-10">
-        {/* Banner Hero - Family 绘本跨页大卡片 (高可读性、羊皮纸微边框) */}
-        <section className="relative overflow-hidden rounded-[10px] bg-[#ffffff] border border-[#e5d5c3] p-8 sm:p-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-          <div className="relative z-10 max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f6f4ef] text-[#343433] text-xs font-semibold tracking-wider border border-[#e5d5c3]">
-              <Sparkles className="w-3.5 h-3.5 text-[#d48f00]" />
-              江南农耕文化园 · 数字化运营平台
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#121212] leading-tight">
-              研学运营工作台
-            </h1>
-            <p className="text-[#474645] text-sm sm:text-base leading-relaxed">
-              覆盖方案策划、精准测算、排期日历与物资备货四大关键环节。让每一场农耕研学活动有据可依、高效协同。
-            </p>
-            <div className="pt-2 flex flex-wrap gap-3">
-              <a
-                href="/pricing"
-                className="inline-flex items-center gap-2 text-white font-semibold text-xs px-5 py-2.5 rounded-full bg-[#121212] hover:bg-[#2b2b2b] transition-all hover:scale-[1.02]"
-              >
-                <Calculator className="w-4 h-4 text-white" /> 开始成本测算
-              </a>
-              <a
-                href="/yanxue-calendar"
-                className="inline-flex items-center gap-2 text-[#121212] font-semibold text-xs px-5 py-2.5 rounded-full bg-[#f6f4ef] border border-[#e5d5c3] hover:bg-[#ede9e2] transition-all hover:scale-[1.02]"
-              >
-                <CalendarIcon className="w-4 h-4 text-[#d48f00]" /> 查看排期日历 & 提醒
-              </a>
-              <a
-                href="/scheme-import"
-                className="inline-flex items-center gap-2 text-[#121212] font-semibold text-xs px-5 py-2.5 rounded-full bg-[#f6f4ef] border border-[#e5d5c3] hover:bg-[#ede9e2] transition-all hover:scale-[1.02]"
-              >
-                <FileText className="w-4 h-4 text-[#0086fc]" /> 导入新方案
-              </a>
-            </div>
+        {/* Banner Hero - Family 经典手绘吉祥物绘本跨页 (居中大标题 + 左右童趣萌兽插画簇 + 高对比清晰按钮) */}
+        <section className="relative overflow-hidden rounded-[14px] bg-[#ffffff] border border-[#e5d5c3] px-6 py-12 sm:py-16 md:py-20 flex flex-col items-center justify-center text-center">
+          {/* 左侧手绘吉祥物插画簇 (稻米小精灵、麦穗金币、教案折角纸片、红心等) */}
+          <div className="absolute left-0 lg:left-4 top-1/2 -translate-y-1/2 w-48 sm:w-60 lg:w-72 hidden md:block pointer-events-none opacity-95">
+            <MascotClusterLeft />
           </div>
 
-          {/* 右侧：本月关键运营数据速览 (Family 浅石卡片风格) */}
-          <div className="w-full lg:w-80 flex-shrink-0 p-5 rounded-[10px] bg-[#fbfaf9] border border-[#e5d5c3] text-[#121212] space-y-3">
-            <div className="flex items-center justify-between pb-2.5 border-b border-[#e5d5c3]/80">
-              <span className="text-xs font-bold text-[#343433]">本月运营速览</span>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#f2f0ed] text-[#474645] font-bold border border-[#e5d5c3]">
+          {/* 右侧手绘吉祥物插画簇 (书包小怪兽、笑眼花花怪、三角饭团小精灵、小蜜蜂、放大镜等) */}
+          <div className="absolute right-0 lg:right-4 top-1/2 -translate-y-1/2 w-48 sm:w-60 lg:w-72 hidden md:block pointer-events-none opacity-95">
+            <MascotClusterRight />
+          </div>
+
+          {/* 居中核心内容区 (绝对居中，留足呼吸感，字迹清晰深邃) */}
+          <div className="relative z-10 max-w-xl mx-auto space-y-5">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#f6f4ef] text-[#343433] text-xs font-semibold tracking-wider border border-[#e5d5c3]">
+              <Sparkles className="w-3.5 h-3.5 text-[#d48f00]" />
+              江南农耕文化研学 · 数字化运营平台
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[#121212] leading-[1.15]">
+              研学运营工作台
+            </h1>
+
+            <p className="text-[#474645] text-sm sm:text-base leading-relaxed max-w-lg mx-auto">
+              覆盖方案策划、精准测算、排期日历与物资备货四大关键环节。让每一场田野农耕研学有据可依、高效协同。
+            </p>
+
+            {/* 居中核心 CTA 胶囊按钮组 (高对比度、白字黑底、绝对保证字迹 100% 清晰) */}
+            <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="/pricing"
+                className="btn-dark-pill inline-flex items-center gap-2 text-xs sm:text-sm font-semibold px-6 py-3 rounded-full transition-all hover:scale-[1.02] shadow-sm"
+                style={{ backgroundColor: '#121212', color: '#ffffff' }}
+              >
+                <Calculator className="w-4 h-4 text-white" />
+                <span style={{ color: '#ffffff' }}>开始成本测算</span>
+              </a>
+
+              <a
+                href="/yanxue-calendar"
+                className="btn-sand-pill inline-flex items-center gap-2 text-xs sm:text-sm font-semibold px-5 py-3 rounded-full border border-[#e5d5c3] transition-all hover:scale-[1.02]"
+                style={{ backgroundColor: '#f6f4ef', color: '#121212' }}
+              >
+                <CalendarIcon className="w-4 h-4 text-[#d48f00]" />
+                <span style={{ color: '#121212' }}>查看排期日历</span>
+              </a>
+
+              <a
+                href="/scheme-import"
+                className="btn-sand-pill inline-flex items-center gap-2 text-xs sm:text-sm font-semibold px-5 py-3 rounded-full border border-[#e5d5c3] transition-all hover:scale-[1.02]"
+                style={{ backgroundColor: '#f6f4ef', color: '#121212' }}
+              >
+                <FileText className="w-4 h-4 text-[#0086fc]" />
+                <span style={{ color: '#121212' }}>导入新方案</span>
+              </a>
+            </div>
+
+            {/* 手机端可见的萌系吉祥物徽章 */}
+            <div className="flex md:hidden items-center justify-center gap-2 pt-2 text-xs text-[#7e7e7d]">
+              <span>🌾 探秘自然</span>
+              <span>·</span>
+              <span>🌱 躬耕田野</span>
+              <span>·</span>
+              <span>🎒 快乐研学</span>
+            </div>
+          </div>
+        </section>
+
+        {/* 本月关键运营数据速览 (Family 纸感平铺指标带) */}
+        <section className="rounded-[10px] bg-[#ffffff] border border-[#e5d5c3] p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 mb-4 border-b border-[#f2f0ed] gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00c978] animate-pulse" />
+              <h2 className="text-sm font-bold text-[#121212]">本月实时运营速览</h2>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#f6f4ef] text-[#474645] font-semibold border border-[#e5d5c3]">
                 {month}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div>
-                <span className="text-[11px] text-[#7e7e7d] block">本月出团场次</span>
-                <strong className="text-2xl font-black text-[#121212]">
-                  {loading ? '—' : monthEvents.length} <small className="text-xs font-normal text-[#7e7e7d]">场</small>
-                </strong>
-              </div>
-              <div>
-                <span className="text-[11px] text-[#7e7e7d] block">总服务人数</span>
-                <strong className="text-2xl font-black text-[#121212]">
-                  {loading ? '—' : monthEvents.reduce((n, e) => n + Number(e.people || 0), 0)}{' '}
-                  <small className="text-xs font-normal text-[#7e7e7d]">人</small>
-                </strong>
-              </div>
-              <div>
-                <span className="text-[11px] text-[#7e7e7d] block">待确认活动</span>
-                <strong className="text-xl font-bold text-[#d48f00]">
-                  {loading ? '—' : followups.length} <small className="text-xs font-normal text-[#7e7e7d]">场</small>
-                </strong>
-              </div>
-              <div>
-                <span className="text-[11px] text-[#7e7e7d] block">待备货物资</span>
-                <strong className="text-xl font-bold text-[#00c978]">
-                  {loading ? '—' : unready} <small className="text-xs font-normal text-[#7e7e7d]">项</small>
-                </strong>
-              </div>
+            <span className="text-xs text-[#7e7e7d]">云端数据自动同步</span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-[8px] bg-[#fbfaf9] border border-[#f2f0ed]">
+              <span className="text-xs text-[#7e7e7d] block font-medium">本月出团场次</span>
+              <strong className="text-2xl sm:text-3xl font-black text-[#121212] block mt-1">
+                {loading ? '—' : monthEvents.length} <small className="text-xs font-normal text-[#7e7e7d]">场</small>
+              </strong>
             </div>
-            <div className="pt-2 border-t border-[#e5d5c3]/80 flex items-center justify-between text-[11px] text-[#7e7e7d]">
-              <span>云端数据实时同步</span>
-              <span className="inline-block w-2 h-2 rounded-full bg-[#00c978] animate-pulse" />
+            <div className="p-4 rounded-[8px] bg-[#fbfaf9] border border-[#f2f0ed]">
+              <span className="text-xs text-[#7e7e7d] block font-medium">总服务人数</span>
+              <strong className="text-2xl sm:text-3xl font-black text-[#121212] block mt-1">
+                {loading ? '—' : monthEvents.reduce((n, e) => n + Number(e.people || 0), 0)}{' '}
+                <small className="text-xs font-normal text-[#7e7e7d]">人</small>
+              </strong>
+            </div>
+            <div className="p-4 rounded-[8px] bg-[#fbfaf9] border border-[#f2f0ed]">
+              <span className="text-xs text-[#7e7e7d] block font-medium">待确认活动</span>
+              <strong className="text-2xl sm:text-3xl font-black text-[#d48f00] block mt-1">
+                {loading ? '—' : followups.length} <small className="text-xs font-normal text-[#7e7e7d]">场</small>
+              </strong>
+            </div>
+            <div className="p-4 rounded-[8px] bg-[#fbfaf9] border border-[#f2f0ed]">
+              <span className="text-xs text-[#7e7e7d] block font-medium">待备货物资</span>
+              <strong className="text-2xl sm:text-3xl font-black text-[#00c978] block mt-1">
+                {loading ? '—' : unready} <small className="text-xs font-normal text-[#7e7e7d]">项</small>
+              </strong>
             </div>
           </div>
         </section>
@@ -406,9 +440,10 @@ export default function Home() {
                   </p>
                   <a
                     href="/yanxue-calendar"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full bg-[#121212] text-white hover:bg-[#2b2b2b] transition-colors"
+                    className="btn-dark-pill inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full transition-colors"
+                    style={{ backgroundColor: '#121212', color: '#ffffff' }}
                   >
-                    ＋ 立即安排活动
+                    <span style={{ color: '#ffffff' }}>＋ 立即安排活动</span>
                   </a>
                 </div>
               ) : (
@@ -519,15 +554,17 @@ export default function Home() {
                 <div className="pt-3 border-t border-[#f2f0ed] flex gap-2">
                   <a
                     href={`/pricing`}
-                    className="flex-1 py-2 text-center text-xs font-semibold rounded-full bg-[#121212] text-white hover:bg-[#2b2b2b] transition-colors"
+                    className="btn-dark-pill flex-1 py-2.5 text-center text-xs font-semibold rounded-full transition-all hover:scale-[1.01]"
+                    style={{ backgroundColor: '#121212', color: '#ffffff' }}
                   >
-                    按此方案定价
+                    <span style={{ color: '#ffffff' }}>按此方案定价</span>
                   </a>
                   <a
                     href={`/yanxue-calendar`}
-                    className="py-2 px-4 text-xs font-semibold rounded-full bg-[#f6f4ef] text-[#121212] border border-[#e5d5c3] hover:bg-[#ede9e2] transition-colors"
+                    className="btn-sand-pill py-2.5 px-4 text-xs font-semibold rounded-full border border-[#e5d5c3] transition-all hover:scale-[1.01]"
+                    style={{ backgroundColor: '#f6f4ef', color: '#121212' }}
                   >
-                    排期
+                    <span style={{ color: '#121212' }}>排期</span>
                   </a>
                 </div>
               </div>

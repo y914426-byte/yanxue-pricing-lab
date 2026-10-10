@@ -127,6 +127,98 @@ h1, h2, h3, h4, p {
 /* ========================================================
    全局统一导航栏 (Global Topbar) & 平滑滑动胶囊导航
    ======================================================== */
+/* Family 强制高对比度药丸按钮，杜绝黑底黑字与文字不可读问题 */
+.family-btn-dark,
+.btn-dark-pill,
+a.family-btn-dark,
+a.btn-dark-pill,
+button.family-btn-dark,
+button.btn-dark-pill {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+.family-btn-dark *,
+.btn-dark-pill *,
+a.family-btn-dark *,
+button.family-btn-dark * {
+  color: #ffffff !important;
+}
+
+.family-btn-dark:hover,
+.btn-dark-pill:hover,
+a.family-btn-dark:hover,
+button.family-btn-dark:hover {
+  background-color: #262626 !important;
+  color: #ffffff !important;
+}
+
+.family-btn-sand,
+.btn-sand-pill,
+a.family-btn-sand,
+button.family-btn-sand {
+  background-color: #f6f4ef !important;
+  color: #121212 !important;
+  border: 1px solid #e5d5c3 !important;
+  text-decoration: none !important;
+}
+
+.family-btn-sand *,
+.btn-sand-pill *,
+a.family-btn-sand *,
+button.family-btn-sand * {
+  color: #121212 !important;
+}
+
+.family-btn-sand:hover,
+.btn-sand-pill:hover,
+a.family-btn-sand:hover,
+button.family-btn-sand:hover {
+  background-color: #ede9e2 !important;
+  color: #121212 !important;
+}
+
+/* Family 绘本吉祥物柔和漂浮动效 */
+@keyframes mascot-float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1.2deg);
+  }
+}
+
+@keyframes mascot-float-alt {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-1.5deg);
+  }
+}
+
+@keyframes mascot-wiggle {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+.animate-mascot-float {
+  animation: mascot-float-slow 5s ease-in-out infinite;
+}
+
+.animate-mascot-float-alt {
+  animation: mascot-float-alt 6.5s ease-in-out infinite;
+}
+
+.animate-mascot-wiggle {
+  animation: mascot-wiggle 3s ease-in-out infinite;
+}
+
 .global-topbar {
   position: sticky;
   top: 0;
@@ -892,8 +984,8 @@ h1, h2, h3, h4, p {
 
 .add-cost {
   height: 40px;
-  background: var(--primary);
-  color: #ffffff;
+  background: var(--primary) !important;
+  color: #ffffff !important;
   padding: 0 16px;
   border-radius: 9px;
   font-size: 13px;
@@ -901,11 +993,16 @@ h1, h2, h3, h4, p {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 3px 8px rgba(39, 86, 60, 0.2);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.add-cost * {
+  color: #ffffff !important;
 }
 
 .add-cost:hover {
-  background: var(--primary-hover);
+  background: var(--primary-hover) !important;
+  color: #ffffff !important;
 }
 
 .cost-table {
