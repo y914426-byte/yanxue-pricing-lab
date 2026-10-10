@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { SchemeLink as Link } from '@/components/scheme-link';
 import { Button } from '@/components/ui/button';
+import { GlobalNav } from '@/components/global-nav';
 import { groupLabel } from '@/lib/scheme-learning';
 
 type Template = {
@@ -193,28 +194,28 @@ export default function LearningPage() {
   }
 
   return (
-    <main className="workspace learning-workspace">
-      <nav className="scheme-actions">
-        <Link className="price-link" href="/">
-          研学定价台
-        </Link>
-        <Link className="price-link" href="/schemes">
-          我的方案
-        </Link>
-        <Link className="price-link" href="/scheme-import">
-          导入方案
-        </Link>
-      </nav>
-      <div className="page-title">
-        <div>
-          <p className="eyebrow">个人业务知识</p>
-          <h1>成本知识库</h1>
+    <div className="min-h-screen bg-[#f8f7f2] flex flex-col">
+      <GlobalNav active="learning" />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full flex-1">
+        <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-stone-200/80 gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-800 mb-1">
+              <span>🌾 研学智能映射规则</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
+              研学成本知识库
+            </h1>
+            <p className="text-sm text-stone-600 mt-1">
+              沉淀您在多次方案测算中纠偏的活动与成本项目对应关系，AI 解析方案时将自动优先命中。
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100/70 text-emerald-800 rounded-full text-xs font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              规则作用域：当前登录账号
+            </span>
+          </div>
         </div>
-        <span className="live">
-          <i />
-          仅影响当前账号
-        </span>
-      </div>
       {error && (
         <div className="error-box" role="alert">
           {error}
@@ -452,5 +453,6 @@ export default function LearningPage() {
         </>
       )}
     </main>
+    </div>
   );
 }

@@ -1,33 +1,498 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { GlobalNav } from '@/components/global-nav';
+import { 
+  Calendar as CalendarIcon, 
+  Calculator, 
+  PackageCheck, 
+  FileText, 
+  ArrowRight, 
+  CheckCircle2, 
+  Clock, 
+  Users, 
+  MapPin, 
+  PlusCircle, 
+  Sparkles,
+  BookOpen
+} from 'lucide-react';
 
-type Event={id:string;date:string;name:string;people:number;place:string;status:string;materials:{name:string;done:boolean}[]};
-const statusText:Record<string,string>={confirmed:'已确定',pending:'待确认',booking:'预约中',completed:'已完成',cancelled:'已取消'};
+type Event = {
+  id: string;
+  date: string;
+  name: string;
+  people: number;
+  place: string;
+  status: string;
+  materials: { name: string; done: boolean }[];
+};
 
-export default function Home(){
- const [events,setEvents]=useState<Event[]>([]);
- const [loading,setLoading]=useState(true);
- const [error,setError]=useState('');
- useEffect(()=>{let active=true;fetch('/api/learning-calendar',{cache:'no-store'}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error||'读取日历失败');if(active)setEvents(d.events||[])}).catch(e=>{if(active)setError(e instanceof Error?e.message:'日历暂不可用')}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[]);
- const month=new Date().toISOString().slice(0,7),today=new Date().toISOString().slice(0,10);
- const monthEvents=useMemo(()=>events.filter(e=>e.date.startsWith(month)),[events,month]);
- const followups=monthEvents.filter(e=>e.status==='pending'||e.status==='booking');
- const unready=monthEvents.reduce((n,e)=>n+e.materials.filter(m=>!m.done).length,0);
- const upcoming=events.filter(e=>e.date>=today&&e.status!=='cancelled').sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
- return <main className="hub"><style>{css}</style>
-  <header className="topbar"><a className="brand" href="/"><span className="brand-mark">江</span><span><strong>江南农耕研学</strong><small>运营工作台</small></span></a><nav aria-label="主导航"><a className="active" href="/">运营总览</a><a href="/pricing">研学定价台</a><a href="/yanxue-calendar">活动日历</a><a href="/yanxue-calendar/materials">物资中心</a><a href="/scheme-import">方案导入</a><a href="/schemes">我的方案</a></nav><a className="top-cta" href="/yanxue-calendar">＋ 新建活动</a></header>
-  <section className="welcome"><div className="welcome-copy"><span className="eyebrow">JIANGNAN FARM CULTURE PARK · OPERATIONS</span><h1>研学运营台</h1><p>从方案、定价到排期与备货，让每场研学活动都更好规划、更易落地。</p><div className="welcome-actions"><a className="button dark" href="/pricing">开始定价 <span>→</span></a><a className="button light" href="/yanxue-calendar">查看活动日历 <span>→</span></a></div></div><div className="welcome-stamp"><span>农耕<br/>研学</span><small>PLAN · PRICE · OPERATE</small></div></section>
-  <section className="section-head"><div><span className="eyebrow">CHOOSE A WORKSPACE</span><h2>选择工作区</h2><p>进入对应功能，继续你的研学运营工作</p></div><span className="workspace-count">2 个核心工作区</span></section>
-  <section className="workspace-grid" aria-label="核心工作区">
-   <article className="workspace-card pricing-card"><div className="card-top"><span className="icon pricing-icon">¥</span><span className="card-number">WORKSPACE 01</span></div><div className="card-copy"><h3>研学定价台</h3><p>快速核算活动成本、人数与报价，查看盈亏平衡和方案历史。</p></div><a href="/pricing">进入定价台 <span>→</span></a></article>
-   <article className="workspace-card calendar-card"><div className="card-top"><span className="icon calendar-icon">日</span><span className="card-number">WORKSPACE 02</span></div><div className="card-copy"><h3>活动日历</h3><p>安排活动日期与流程，跟进确认进度，并同步准备物资。</p></div><a href="/yanxue-calendar">进入活动日历 <span>→</span></a></article>
-  </section>
-  <section className="overview"><div className="overview-header"><div><span className="eyebrow">THIS MONTH</span><h2>运营概览</h2></div><a href="/yanxue-calendar">打开活动日历 →</a></div><div className="metrics"><article><span>本月活动</span><strong>{loading?'—':monthEvents.length}<small>场</small></strong></article><article><span>待跟进</span><strong>{loading?'—':followups.length}<small>场</small></strong></article><article><span>预计参与</span><strong>{loading?'—':monthEvents.reduce((n,e)=>n+Number(e.people||0),0)}<small>人</small></strong></article><article><span>待准备物资</span><strong>{loading?'—':unready}<small>项</small></strong></article></div>
-   <div className="upcoming-head"><h3>近期活动</h3><a href="/yanxue-calendar">查看全部 →</a></div>{error&&<p className="data-note">{error}</p>}{loading?<p className="empty">正在同步活动…</p>:upcoming.length===0?<div className="empty"><span className="empty-icon">＋</span><div><strong>还没有近期活动</strong><p>先安排一场活动，日历和物资概览就会显示在这里。</p></div><a href="/yanxue-calendar">去安排活动 →</a></div>:<div className="upcoming-list">{upcoming.map(e=><a href="/yanxue-calendar" className="upcoming-row" key={e.id}><time>{e.date.slice(5).replace('-','/')}</time><strong>{e.name}</strong><span>{e.people||0} 人 · {e.place||'场地待定'}</span><i className={'status '+e.status}>{statusText[e.status]||e.status}</i><b>→</b></a>)}</div>}
-  </section>
-  <footer>江南农耕研学 · 运营工作台<span>定价 · 排期 · 备货</span></footer>
- </main>
+const statusText: Record<string, string> = {
+  confirmed: '已确定',
+  pending: '待确认',
+  booking: '预约中',
+  completed: '已完成',
+  cancelled: '已取消',
+};
+
+// 精品江南农耕研学方案示范
+const featuredSchemes = [
+  {
+    title: '江南稻香探秘 · 水稻全生命周期与农耕手作',
+    grade: '小学 1-6 年级 / 亲子家庭',
+    duration: '1 日研学 (09:00 - 16:00)',
+    highlights: ['水稻田间生态观察', '传统石磨碾米与脱粒', '非遗五彩稻香饭手作'],
+    targetPrice: '¥ 198 / 人',
+    badge: '秋季爆款',
+  },
+  {
+    title: '二十四节气智慧 · 农事节令与非遗草木染',
+    grade: '中小学全学段 / 研学团',
+    duration: '1 日研学 (09:30 - 15:30)',
+    highlights: ['农耕二十四节气探源', '田间植物采摘识百草', '传统板蓝草木染织体验'],
+    targetPrice: '¥ 218 / 人',
+    badge: '传统文化',
+  },
+  {
+    title: '小小水利家 · 江南圩田系统与古代水车研造',
+    grade: '小学 3 年级以上 / 初中',
+    duration: '1 日研学 (09:00 - 16:30)',
+    highlights: ['太湖流域圩田水系探究', '古法龙骨水车踩水体验', '鲁班锁与微缩水车模型拼装'],
+    targetPrice: '¥ 238 / 人',
+    badge: 'STEAM 探究',
+  },
+];
+
+export default function Home() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/learning-calendar', { cache: 'no-store' })
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || '读取日历失败');
+        if (active) setEvents(d.events || []);
+      })
+      .catch((e) => {
+        if (active) setError(e instanceof Error ? e.message : '日历暂不可用');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const month = new Date().toISOString().slice(0, 7);
+  const today = new Date().toISOString().slice(0, 10);
+  const monthEvents = useMemo(() => events.filter((e) => e.date.startsWith(month)), [events, month]);
+  const followups = monthEvents.filter((e) => e.status === 'pending' || e.status === 'booking');
+  const unready = monthEvents.reduce(
+    (n, e) => n + (e.materials || []).filter((m) => !m.done).length,
+    0
+  );
+  const upcoming = events
+    .filter((e) => e.date >= today && e.status !== 'cancelled')
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 5);
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f7f2] text-[#1e2c22]">
+      <GlobalNav active="overview" />
+
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 py-8 space-y-10">
+        {/* Banner Hero */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#27563c] via-[#2f6346] to-[#1e4530] text-white p-8 sm:p-12 shadow-xl shadow-[#27563c]/10">
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none flex items-center justify-center font-serif text-[180px] font-bold select-none text-white">
+            耕
+          </div>
+          <div className="relative z-10 max-w-2xl space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-white/90 text-xs font-semibold tracking-wider uppercase">
+              <Sparkles className="w-3.5 h-3.5 text-[#e5c178]" />
+              江南农耕文化园 · 研学数字化运营平台
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+              研学运营工作台
+            </h1>
+            <p className="text-white/80 text-base sm:text-lg leading-relaxed">
+              打通方案策划、精准测算、排期日历与物资备货四大关键环节。让每一场农耕研学活动有据可依、高效交付。
+            </p>
+            <div className="pt-2 flex flex-wrap gap-3">
+              <a
+                href="/pricing"
+                className="inline-flex items-center gap-2 bg-[#d97706] hover:bg-[#b45309] text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-colors"
+              >
+                <Calculator className="w-4 h-4" /> 开始成本测算
+              </a>
+              <a
+                href="/yanxue-calendar"
+                className="inline-flex items-center gap-2 bg-white text-[#27563c] hover:bg-[#edf5ef] font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-colors"
+              >
+                <CalendarIcon className="w-4 h-4" /> 查看活动日历
+              </a>
+              <a
+                href="/scheme-import"
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-xl backdrop-blur transition-colors"
+              >
+                <FileText className="w-4 h-4" /> 导入新方案
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* 核心工作区卡片 */}
+        <section className="space-y-4">
+          <div className="flex justify-between items-end">
+            <div>
+              <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">WORKSPACES</span>
+              <h2 className="text-2xl font-bold text-[#1e2c22]">研学运营核心工作区</h2>
+              <p className="text-sm text-[#5d6e62] mt-1">覆盖研学活动全生命周期业务流程</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* 01 方案库 */}
+            <a
+              href="/schemes"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 01</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                    研学方案库
+                  </h3>
+                  <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
+                    沉淀农耕文化精品教案，解析课程目标、行程与物料需求。
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+                <span>进入方案库</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </a>
+
+            {/* 02 定价台 */}
+            <a
+              href="/pricing"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#fef7ec] text-[#d97706] flex items-center justify-center">
+                    <Calculator className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 02</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                    研学定价台
+                  </h3>
+                  <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
+                    按人/组精准核算成本，实时计算保本售价、毛利率与云端档案。
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+                <span>开始定价测算</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </a>
+
+            {/* 03 日历台 */}
+            <a
+              href="/yanxue-calendar"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                    <CalendarIcon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 03</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                    活动排期日历
+                  </h3>
+                  <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
+                    月历与日程列表协同排期，实时掌握预约、确定状态及人员规模。
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+                <span>查看排期日历</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </a>
+
+            {/* 04 物资中心 */}
+            <a
+              href="/yanxue-calendar/materials"
+              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#f0f7f3] text-[#16a34a] flex items-center justify-center">
+                    <PackageCheck className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 04</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                    物资准备中心
+                  </h3>
+                  <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
+                    按月汇总备货需求，直观勾选准备进度，避免活动现场物料遗漏。
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+                <span>管理备货物资</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </a>
+          </div>
+        </section>
+
+        {/* 运营概览与近期活动 */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 指标看板 */}
+          <div className="lg:col-span-1 p-6 rounded-2xl bg-white border border-[#e3ded2] shadow-sm space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">THIS MONTH</span>
+                <h3 className="text-xl font-bold text-[#1e2c22]">本月运营概览</h3>
+              </div>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-[#edf5ef] text-[#27563c] font-semibold">
+                {month}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <span className="text-xs text-[#5d6e62]">本月活动</span>
+                <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+                  {loading ? '—' : monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+                </strong>
+              </div>
+              <div className="p-4 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <span className="text-xs text-[#5d6e62]">预计参与</span>
+                <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
+                  {loading ? '—' : monthEvents.reduce((n, e) => n + Number(e.people || 0), 0)}{' '}
+                  <small className="text-xs font-normal text-[#5d6e62]">人</small>
+                </strong>
+              </div>
+              <div className="p-4 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <span className="text-xs text-[#5d6e62]">待跟进确认</span>
+                <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
+                  {loading ? '—' : followups.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+                </strong>
+              </div>
+              <div className="p-4 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+                <span className="text-xs text-[#5d6e62]">待准备物资</span>
+                <strong className="block text-2xl font-extrabold text-[#b45309] mt-1">
+                  {loading ? '—' : unready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+                </strong>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#f1eee5]">
+              <a
+                href="/yanxue-calendar/materials"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#27563c] hover:underline"
+              >
+                前往物资中心核对清单 <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* 近期活动动态 */}
+          <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-[#e3ded2] shadow-sm flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">UPCOMING EVENTS</span>
+                  <h3 className="text-xl font-bold text-[#1e2c22]">近期活动安排</h3>
+                </div>
+                <a
+                  href="/yanxue-calendar"
+                  className="text-xs font-bold text-[#27563c] hover:underline inline-flex items-center gap-1"
+                >
+                  查看完整日历 <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200">
+                  {error}
+                </div>
+              )}
+
+              {loading ? (
+                <div className="py-12 text-center text-xs text-[#5d6e62]">正在同步活动数据…</div>
+              ) : upcoming.length === 0 ? (
+                <div className="py-10 text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                    <CalendarIcon className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-[#1e2c22]">近期暂无待举办活动</p>
+                  <p className="text-xs text-[#5d6e62] max-w-sm mx-auto">
+                    可点击下方按钮安排一场新活动，排期信息将自动同步到日历和物资中心。
+                  </p>
+                  <a
+                    href="/yanxue-calendar"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-[#27563c] text-white"
+                  >
+                    ＋ 立即安排活动
+                  </a>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#f1eee5]">
+                  {upcoming.map((e) => (
+                    <a
+                      key={e.id}
+                      href={`/yanxue-calendar`}
+                      className="group py-3.5 flex items-center justify-between gap-4 hover:bg-[#faf9f5] px-2 -mx-2 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 text-center flex-shrink-0">
+                          <span className="block text-xs font-bold text-[#27563c]">
+                            {e.date.slice(5).replace('-', '/')}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <strong className="block text-sm font-bold text-[#1e2c22] truncate group-hover:text-[#27563c] transition-colors">
+                            {e.name}
+                          </strong>
+                          <div className="flex items-center gap-3 text-xs text-[#5d6e62] mt-0.5">
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5" /> {e.people || 0} 人
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5" /> {e.place || '场地待定'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span
+                          className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                            e.status === 'confirmed'
+                              ? 'bg-[#edf5ef] text-[#27563c]'
+                              : e.status === 'pending'
+                              ? 'bg-[#fef7ec] text-[#d97706]'
+                              : e.status === 'booking'
+                              ? 'bg-[#eff6ff] text-[#2563eb]'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {statusText[e.status] || e.status}
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-[#8b998e] group-hover:text-[#27563c] group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-[#f1eee5] flex justify-between items-center text-xs text-[#5d6e62]">
+              <span>点击活动可查看流程与物资准备详情</span>
+              <a href="/yanxue-calendar" className="text-[#27563c] font-semibold hover:underline">
+                ＋ 新增排期
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* 精品江南农耕研学方案推荐 */}
+        <section className="space-y-4">
+          <div className="flex justify-between items-end">
+            <div>
+              <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">FEATURED CURRICULUM</span>
+              <h2 className="text-2xl font-bold text-[#1e2c22]">江南农耕特色研学课程方案</h2>
+              <p className="text-sm text-[#5d6e62] mt-1">系统预置典型农耕研学场景，可一键导入并进行成本定价测算</p>
+            </div>
+            <a
+              href="/schemes"
+              className="text-xs font-bold text-[#27563c] hover:underline inline-flex items-center gap-1"
+            >
+              查看全部方案 <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {featuredSchemes.map((scheme, idx) => (
+              <div
+                key={idx}
+                className="p-6 rounded-2xl bg-white border border-[#e3ded2] shadow-sm flex flex-col justify-between space-y-5"
+              >
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-[#edf5ef] text-[#27563c] font-semibold">
+                      {scheme.badge}
+                    </span>
+                    <span className="text-xs font-bold text-[#d97706]">{scheme.targetPrice}</span>
+                  </div>
+                  <h3 className="text-base font-bold text-[#1e2c22] leading-snug">{scheme.title}</h3>
+                  <div className="text-xs text-[#5d6e62] space-y-1">
+                    <p>🎯 适合对象：{scheme.grade}</p>
+                    <p>⏱ 活动时长：{scheme.duration}</p>
+                  </div>
+                  <div className="pt-2 border-t border-[#f1eee5] space-y-1.5">
+                    <span className="text-[11px] font-bold text-[#8b998e]">核心研学亮点：</span>
+                    {scheme.highlights.map((h, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-[#1e2c22]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#27563c] flex-shrink-0" />
+                        <span>{h}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-[#f1eee5] flex gap-2">
+                  <a
+                    href={`/pricing`}
+                    className="flex-1 py-2 text-center text-xs font-bold rounded-lg bg-[#edf5ef] text-[#27563c] hover:bg-[#27563c] hover:text-white transition-colors"
+                  >
+                    按此方案定价
+                  </a>
+                  <a
+                    href={`/yanxue-calendar`}
+                    className="py-2 px-3 text-xs font-bold rounded-lg border border-[#e3ded2] hover:bg-[#f8f7f2] text-[#1e2c22] transition-colors"
+                  >
+                    排期
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <footer className="global-footer">
+        <div className="global-footer-inner">
+          <div>
+            <strong>江南农耕研学 · 运营工作台</strong>
+            <span className="ml-3 text-xs text-[#5d6e62]">
+              方案策划 · 成本测算 · 排期日历 · 备货跟踪
+            </span>
+          </div>
+          <span>© 2026 江南农耕文化研学项目组 · All Rights Reserved</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
-
-const css=`*{box-sizing:border-box}.hub{min-height:100vh;background:#f7f6f0;color:#25352c;padding:0 max(22px,calc((100vw - 1180px)/2));font-family:system-ui,-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}.topbar{height:76px;display:flex;align-items:center;gap:30px;border-bottom:1px solid #e7e5db}.brand{display:flex;align-items:center;gap:10px;min-width:max-content;text-decoration:none;color:#25352c}.brand-mark{width:38px;height:38px;border-radius:12px;background:#315c45;color:#fff;display:grid;place-items:center;font-family:serif;font-weight:700}.brand strong,.brand small{display:block}.brand strong{font-size:13px}.brand small{font-size:10px;color:#879087;margin-top:2px;letter-spacing:1px}.topbar nav{display:flex;align-items:center;gap:22px;flex:1;overflow:auto}.topbar nav a{white-space:nowrap;text-decoration:none;color:#717a70;font-size:12px;padding:28px 0}.topbar nav a.active{color:#315c45;font-weight:700;border-bottom:2px solid #315c45}.top-cta{white-space:nowrap;text-decoration:none;color:#fff;background:#315c45;border-radius:9px;padding:10px 13px;font-size:12px}.welcome{margin:28px 0 40px;border-radius:20px;background:#e9eee5;min-height:270px;padding:40px 48px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative}.welcome-copy{max-width:650px;position:relative;z-index:1}.eyebrow{font-size:10px;letter-spacing:1.8px;color:#879087;font-weight:650}.welcome h1{font-size:clamp(38px,5vw,58px);letter-spacing:-2px;margin:12px 0 7px;color:#25352c}.welcome p{font-size:15px;color:#6e796e;margin:0;line-height:1.8}.welcome-actions{display:flex;gap:10px;margin-top:23px}.button{text-decoration:none;padding:11px 15px;border-radius:9px;font-size:12px;font-weight:650}.button span{margin-left:13px}.button.dark{background:#315c45;color:white}.button.light{background:#fff;color:#315c45}.welcome-stamp{width:190px;height:190px;border:1px solid #b9c8b6;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a6d55;transform:rotate(9deg);flex-shrink:0;margin-right:9%}.welcome-stamp span{font-family:serif;font-size:36px;line-height:1.1;font-weight:700;text-align:center}.welcome-stamp small{font-size:7px;letter-spacing:1.2px;margin-top:10px}.section-head,.overview-header{display:flex;justify-content:space-between;align-items:flex-end}.section-head h2,.overview-header h2{font-size:25px;margin:6px 0 3px}.section-head p{font-size:12px;color:#81897f;margin:0}.workspace-count{font-size:11px;color:#939a90;padding-bottom:5px}.workspace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:17px}.workspace-card{min-height:228px;border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .18s,box-shadow .18s}.workspace-card:hover{transform:translateY(-2px);box-shadow:0 12px 30px #26382a12}.pricing-card{background:#fff;border:1px solid #e8e4da}.calendar-card{background:#315c45;color:#fff}.card-top{display:flex;justify-content:space-between;align-items:center}.icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:21px;font-weight:700}.pricing-icon{background:#f3f0e8;color:#315c45}.calendar-icon{background:#ffffff20;color:#fff}.card-number{font-size:9px;letter-spacing:1.5px;color:#9ca399}.calendar-card .card-number{color:#c2d2c5}.card-copy h3{font-size:22px;margin:0 0 6px}.card-copy p{font-size:12px;line-height:1.7;color:#80887e;max-width:440px;margin:0}.calendar-card .card-copy p{color:#d2ded3}.workspace-card>a{font-size:12px;font-weight:700;text-decoration:none;color:#315c45}.workspace-card>a span{margin-left:9px}.calendar-card>a{color:#fff}.overview{margin-top:38px;background:#fff;border:1px solid #e8e4da;border-radius:16px;padding:23px 25px}.overview-header{align-items:center}.overview-header h2{margin-bottom:0}.overview-header>a,.upcoming-head>a{font-size:11px;color:#315c45;text-decoration:none;font-weight:650}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:19px}.metrics article{background:#f7f6f0;border-radius:11px;padding:14px}.metrics article>span{display:block;color:#80887e;font-size:11px}.metrics strong{display:block;font-size:26px;margin-top:7px}.metrics small{font-size:11px;color:#8e968c;font-weight:500;margin-left:4px}.upcoming-head{display:flex;align-items:center;justify-content:space-between;margin-top:23px;border-top:1px solid #eceae2;padding-top:17px}.upcoming-head h3{margin:0;font-size:14px}.upcoming-row{display:grid;grid-template-columns:75px 1fr 1fr auto 18px;align-items:center;gap:12px;padding:12px 3px;border-bottom:1px solid #f0eee8;color:#29372e;text-decoration:none}.upcoming-row time{font-size:12px;color:#748174}.upcoming-row strong{font-size:12px}.upcoming-row>span{font-size:11px;color:#828a80}.upcoming-row>b{color:#91a092}.status{font-style:normal;border-radius:999px;padding:5px 8px;font-size:10px;background:#edf4ed;color:#315c45}.status.pending{background:#f7f1df;color:#806c31}.status.booking{background:#edf2f8;color:#4a637c}.status.cancelled{background:#f8eaea;color:#9a4c4c}.empty{display:flex;align-items:center;gap:13px;padding:17px 4px;color:#7f887e}.empty-icon{width:34px;height:34px;border-radius:50%;background:#edf4ed;color:#315c45;display:grid;place-items:center;font-size:20px}.empty strong{font-size:12px}.empty p{font-size:11px;margin:3px 0 0;color:#92998f}.empty>a{margin-left:auto;text-decoration:none;color:#315c45;font-size:11px;font-weight:700}.data-note{color:#a33b2c;font-size:11px}footer{display:flex;justify-content:space-between;padding:23px 0;margin-top:12px;font-size:10px;color:#969d93}footer span{letter-spacing:1px}@media(max-width:850px){.hub{padding:0 20px}.topbar{gap:15px}.topbar nav{gap:15px}.topbar nav a{font-size:11px}.welcome-stamp{margin-right:2%}}@media(max-width:640px){.hub{padding:0 15px}.topbar{height:auto;min-height:64px;flex-wrap:wrap;gap:8px;padding:11px 0}.brand-mark{width:34px;height:34px}.topbar nav{order:3;flex-basis:100%;gap:21px;border-top:1px solid #e9e6dd}.topbar nav a{padding:11px 0 7px}.top-cta{margin-left:auto;padding:9px 10px}.welcome{margin:16px 0 27px;min-height:0;padding:25px 20px;border-radius:15px}.welcome h1{font-size:38px;letter-spacing:-1.5px}.welcome p{font-size:12px;max-width:340px}.welcome-stamp{width:74px;height:74px;margin:0 -7px 0 8px;align-self:flex-start}.welcome-stamp span{font-size:17px}.welcome-stamp small{display:none}.welcome-actions{gap:7px;margin-top:17px}.button{padding:10px 11px;font-size:11px}.button span{margin-left:5px}.section-head h2,.overview-header h2{font-size:21px}.section-head p{font-size:11px}.workspace-count{font-size:9px}.workspace-grid{grid-template-columns:1fr;gap:10px;margin-top:13px}.workspace-card{min-height:184px;padding:17px 18px}.card-copy h3{font-size:19px}.card-copy p{font-size:11px}.overview{margin-top:25px;padding:17px 15px}.metrics{grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}.metrics article{padding:11px}.metrics strong{font-size:23px}.upcoming-row{grid-template-columns:48px 1fr auto 16px;gap:7px}.upcoming-row>span{display:none}.upcoming-row strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.status{font-size:9px;padding:4px 6px}.empty{align-items:flex-start;flex-wrap:wrap}.empty>a{margin-left:47px}.empty p{line-height:1.6}footer{font-size:9px}}`;

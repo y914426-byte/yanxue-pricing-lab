@@ -1,51 +1,1098 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
-import {GoogleSignIn} from '@/components/google-sign-in';
+import { useEffect, useMemo, useState } from 'react';
+import { GoogleSignIn } from '@/components/google-sign-in';
+import { GlobalNav } from '@/components/global-nav';
+import { 
+  Calendar as CalendarIcon, 
+  Clock, 
+  MapPin, 
+  Users, 
+  CheckCircle2, 
+  AlertCircle, 
+  ArrowRight, 
+  Plus, 
+  Trash2, 
+  Copy, 
+  Calculator, 
+  Sparkles,
+  PackageCheck,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
-type M={name:string;qty:string;note:string;done:boolean};
-type E={id:string;date:string;name:string;audience:string;people:number;place:string;status:string;flow:string;materials:M[];note:string};
-type A={user:{displayName:string;email:string}|null;clientId:string|null};
+type M = { name: string; qty: string; note: string; done: boolean };
+type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
+type A = { user: { displayName: string; email: string } | null; clientId: string | null };
 
-const labels:Record<string,string>={confirmed:'已确定',pending:'待确认',booking:'预约中',completed:'已完成',cancelled:'已取消'};
-const blank=():E=>({id:'',date:new Date().toISOString().slice(0,10),name:'',audience:'',people:0,place:'',status:'pending',flow:'',materials:[],note:''});
+const labels: Record<string, string> = {
+  confirmed: '已确定',
+  pending: '待确认',
+  booking: '预约中',
+  completed: '已完成',
+  cancelled: '已取消',
+};
 
-export default function Calendar(){
- const [events,setEvents]=useState<E[]>([]),[month,setMonth]=useState(new Date().toISOString().slice(0,7)),[current,setCurrent]=useState<E|null>(null),[form,setForm]=useState<E>(blank()),[editing,setEditing]=useState(false),[canEdit,setCanEdit]=useState(false),[error,setError]=useState(''),[account,setAccount]=useState<A|undefined>(),[query,setQuery]=useState(''),[statusFilter,setStatusFilter]=useState('all'),[view,setView]=useState<'calendar'|'list'>('calendar'),[selectedDate,setSelectedDate]=useState(new Date().toISOString().slice(0,10)),[saving,setSaving]=useState(false);
- const load=async()=>{try{const r=await fetch('/api/learning-calendar',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error);setEvents(d.events||[]);setCanEdit(!!d.canEdit);setError('')}catch(e){const m=e instanceof Error?e.message:'读取失败';setError(m.includes('no such table: learning_calendar_events')?'日历数据表尚未初始化，请先应用 0009_learning_calendar.sql 迁移。':m)}};
- const loadAccount=async()=>{try{const r=await fetch('/api/account',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error();setAccount(d)}catch{setAccount(null)}};
- const signOut=async()=>{await fetch('/api/auth/logout',{method:'POST'});setCanEdit(false);await loadAccount();await load()};
- useEffect(()=>{void load();void loadAccount()},[]);
- const monthEvents=useMemo(()=>events.filter(e=>e.date.startsWith(month)),[events,month]);
- const list=useMemo(()=>monthEvents.filter(e=>(!query||`${e.name} ${e.audience} ${e.place} ${e.flow} ${e.note} ${e.materials.map(x=>x.name+' '+x.note).join(' ') }`.toLowerCase().includes(query.trim().toLowerCase()))&&(statusFilter==='all'||(statusFilter==='followup'?e.status==='pending'||e.status==='booking':e.status===statusFilter))),[monthEvents,query,statusFilter]);
- const selectedDayEvents=list.filter(e=>e.date===selectedDate);
- const stats=useMemo(()=>({total:monthEvents.length,people:monthEvents.reduce((s,e)=>s+Number(e.people||0),0),confirmed:monthEvents.filter(e=>e.status==='confirmed').length,pending:monthEvents.filter(e=>e.status==='pending'||e.status==='booking').length}),[monthEvents]);
- const [y,m]=month.split('-').map(Number),first=new Date(y,m-1,1).getDay(),count=new Date(y,m,0).getDate();
- const days=Array.from({length:42},(_,i)=>{const n=i-first+1;return n>0&&n<=count?n:null});
- const shift=(n:number)=>{const d=new Date(y,m-1+n,1),next=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');setMonth(next);setSelectedDate(next+'-01')};
- const save=async()=>{if(saving)return;setError('');if(!form.name.trim()){setError('请填写活动名称');return}if(!/^\d{4}-\d{2}-\d{2}$/.test(form.date)){setError('请选择有效日期');return}const body=form.id?form:{...form,id:crypto.randomUUID()};try{setSaving(true);const r=await fetch('/api/learning-calendar',{method:form.id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw Error(d.error||'保存失败');setEditing(false);await load()}catch(e){setError(e instanceof Error?e.message:'保存失败')}finally{setSaving(false)}};
- const updateMaterials=async(event:E,index:number)=>{const next={...event,materials:event.materials.map((x,j)=>j===index?{...x,done:!x.done}:x)};setCurrent(next);try{const r=await fetch('/api/learning-calendar',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),d=await r.json();if(!r.ok)throw Error(d.error||'物资状态保存失败');await load()}catch(e){setError(e instanceof Error?e.message:'物资状态保存失败')}};
- const setAllMaterials=async(event:E,done:boolean)=>{const next={...event,materials:event.materials.map(x=>({...x,done}))};try{const r=await fetch('/api/learning-calendar',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),d=await r.json();if(!r.ok)throw Error(d.error||'批量更新物资状态失败');setCurrent(next);await load()}catch(e){setError(e instanceof Error?e.message:'批量更新物资状态失败')}};
+const blank = (): E => ({
+  id: '',
+  date: new Date().toISOString().slice(0, 10),
+  name: '',
+  audience: '',
+  people: 0,
+  place: '江南农耕文化园',
+  status: 'pending',
+  flow: '09:00 研学团队到达并分组整队\n09:30 农耕文化馆导览与节气讲解\n10:30 水稻田间劳作与收割实践\n12:00 农家生态午餐\n13:30 传统农具体验与碾米手作\n15:00 研学成果总结与颁发证书\n15:30 返程',
+  materials: [
+    { name: '农耕防晒遮阳草帽', qty: '按人均 1 顶', note: '防晒必备', done: false },
+    { name: '水稻收割物料与手套', qty: '按人均 1 份', note: '劳作手作', done: false },
+    { name: '随队便携急救医药箱', qty: '1 箱', note: '应急防护', done: true },
+  ],
+  note: '',
+});
 
- const remove=async(id:string)=>{if(!confirm('确定删除这场活动吗？'))return;const r=await fetch('/api/learning-calendar',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const d=await r.json();if(!r.ok){setError(d.error||'删除失败');return}setCurrent(null);await load()};
- const duplicate=(event:E)=>{setCurrent(null);setError('');setForm({...event,id:'',name:event.name+'（副本）',status:'pending',materials:event.materials.map(x=>({...x,done:false}))});setEditing(true)};
- return <main className="calendar">
-  <div className="subnav"><a href="/">← 返回定价台</a><span>研学运营中心</span><a href="/yanxue-calendar">活动日历</a><a href="/yanxue-calendar/materials">物资中心</a><a href="/scheme-import">方案导入</a><a href="/schemes">我的方案</a></div>
-  <style>{css}</style>
-  <header><div><small>JIANGNAN FARM CULTURE PARK · YANXUE OPERATIONS</small><h1>研学运营中心</h1><p>排期 · 活动详情 · 物资准备 · 运营概览</p></div><div className="header-actions">{account?.user&&<span className="account-label">当前账号：{account.user.email}</span>}{canEdit?<button className="primary" onClick={()=>{setForm(blank());setEditing(true)}}>＋ 新增活动</button>:account?.user?<span className="permission-note">该账号暂无日历编辑权限</span>:account?.clientId?<GoogleSignIn clientId={account.clientId} onSuccess={()=>{void (async()=>{await loadAccount();await load()})()}}/>:account===undefined?<span className="permission-note">正在检查登录状态…</span>:<span className="permission-note">Google 登录暂不可用</span>}{account?.user&&<button className="switch-account" onClick={signOut}>切换账号</button>}</div></header>
-  {error&&<div className="error">{error}</div>}
-  <section className="stats"><article><small>本月活动</small><strong>{stats.total}<i>场</i></strong></article><article><small>预计参与</small><strong>{stats.people}<i>人</i></strong></article><article><small>已确定</small><strong>{stats.confirmed}<i>场</i></strong></article><article><small>待跟进</small><strong>{stats.pending}<i>场</i></strong></article></section>
-  <section className="overview"><div className="overview-head"><div><h2>运营概览</h2><span>本月重点事项一眼掌握</span></div><a href="/yanxue-calendar/materials">查看物资中心 →</a></div><div className="overview-grid"><div><b>{stats.total}</b><span>本月活动</span></div><div><b>{stats.people}</b><span>预计参与人数</span></div><div><b>{stats.pending}</b><span>待跟进活动</span></div><div><b>{list.reduce((s,e)=>s+e.materials.filter(x=>!x.done).length,0)}</b><span>待准备物资项</span></div></div><div className="focus">{list.filter(e=>e.status==='pending'||e.status==='booking').slice(0,4).map(e=><button key={e.id} onClick={()=>setCurrent(e)}><strong>{e.date.slice(5)}</strong><span>{e.name}<small>{e.people}人 · {labels[e.status]||e.status}</small></span><i>待跟进</i></button>)}{list.filter(e=>e.status==='pending'||e.status==='booking').length===0&&<p>本月没有待跟进活动，排期状态正常。</p>}</div></section>
+const quickMaterialPresets = [
+  { name: '农耕防晒遮阳草帽', qty: '按人均 1 顶', note: '田间防晒防中暑' },
+  { name: '水稻收割手工材料包', qty: '按人均 1 份', note: '割稻手套与草绳' },
+  { name: '随队便携急救医药箱', qty: '1 箱', note: '创可贴碘伏防暑药' },
+  { name: '无线扩音麦克风套件', qty: '2 套', note: '主讲导师与带班' },
+  { name: '研学班级队旗与分组背心', qty: '4 组', note: '班级红黄蓝绿分组' },
+  { name: '天然矿泉水与饮用水', qty: '2 箱', note: '全员补水' },
+  { name: '研学探究手册与结营证书', qty: '按人均 1 份', note: '活动结营颁发' },
+];
 
-  <div className="toolbar"><button aria-label="上个月" onClick={()=>shift(-1)}>‹</button><b>{y}年{m}月</b><button aria-label="下个月" onClick={()=>shift(1)}>›</button><button onClick={()=>setMonth(new Date().toISOString().slice(0,7))}>本月</button><input aria-label="搜索活动" placeholder="搜索活动、对象、场地、流程或物资" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="按状态筛选" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">全部状态</option><option value="followup">待跟进</option>{Object.entries(labels).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select><span>本月 {stats.total} 场 · 筛选后 {list.length} 场</span></div>
-  <section className={'cal '+(view==='calendar'?'view-active':'view-hidden')}><div className="week">{['日','一','二','三','四','五','六'].map(x=><b key={x}>{x}</b>)}</div><div className="grid">{days.map((n,i)=>{const date=n?month+'-'+String(n).padStart(2,'0'):'';const es=list.filter(e=>e.date===date);return <div className="day" key={i}>{n&&<div className="day-head"><em>{n}</em>{canEdit&&<button aria-label={`新增 ${date} 活动`} onClick={()=>{setForm({...blank(),date});setEditing(true)}}>＋</button>}</div>}{es.map(e=><button key={e.id} className={'event '+e.status} onClick={()=>setCurrent(e)}>{e.name}<small>{e.people}人 · {labels[e.status]||e.status}</small></button>)}</div>})}</div></section>
+export default function Calendar() {
+  const [events, setEvents] = useState<E[]>([]);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [current, setCurrent] = useState<E | null>(null);
+  const [form, setForm] = useState<E>(blank());
+  const [editing, setEditing] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
+  const [error, setError] = useState('');
+  const [account, setAccount] = useState<A | undefined>();
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [saving, setSaving] = useState(false);
 
-  <div className="list-head"><div><h2>活动安排</h2><span>点击活动查看详情和物资清单</span></div><div className="view-switch" role="group" aria-label="活动显示方式"><button className={view==='calendar'?'selected':''} onClick={()=>setView('calendar')}>月历</button><button className={view==='list'?'selected':''} onClick={()=>setView('list')}>列表</button></div></div>
-  <section className="mobile-agenda" aria-label="手机端活动日历"><div className={'mobile-calendar '+(view==='calendar'?'':'view-hidden')}><div className="mobile-week">{['日','一','二','三','四','五','六'].map(x=><b key={x}>{x}</b>)}</div><div className="mobile-days">{days.map((n,i)=>{const date=n?month+'-'+String(n).padStart(2,'0'):'';const amount=n?list.filter(e=>e.date===date).length:0;return n?<button key={i} className={'mobile-day '+(selectedDate===date?'selected ':'')+(date===new Date().toISOString().slice(0,10)?'today':'')} aria-pressed={selectedDate===date} onClick={()=>setSelectedDate(date)}><span>{n}</span>{amount>0&&<i>{amount}</i>}</button>:<span className="mobile-day blank" key={i}/>})}</div><div className="mobile-day-heading"><div><span>所选日期</span><strong>{selectedDate.slice(5).replace('-','月')}日</strong><small>{selectedDayEvents.length} 场活动</small></div>{canEdit&&<button className="mobile-add" onClick={()=>{setForm({...blank(),date:selectedDate});setEditing(true)}}>＋ 添加活动</button>}</div>{selectedDayEvents.length===0?<p className="mobile-empty">{list.length===0?'当前筛选下没有活动。':'这一天还没有安排活动。'}{canEdit&&<span>点“添加活动”即可快速排期。</span>}</p>:<div className="mobile-events">{selectedDayEvents.map(e=><button key={e.id} className="mobile-event" onClick={()=>setCurrent(e)}><span className={'mobile-dot '+e.status}/><span className="mobile-event-copy"><strong>{e.name}</strong><small>{e.people} 人 · {e.place||'场地待定'}</small></span><i>{labels[e.status]||e.status}</i><b>›</b></button>)}</div>}</div></section>
-  {list.length===0?<div className="empty">{monthEvents.length===0?'本月暂无活动。':'没有符合搜索或状态筛选的活动。'}</div>:<div className={'event-list '+(view==='list'?'view-active':'view-hidden')}>{list.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name,'zh-CN')).map(e=><button className="row" key={e.id} onClick={()=>setCurrent(e)}><strong>{e.date.slice(8)}<small>日</small></strong><div><b>{e.name}</b><span>{e.audience||'未填写'} · {e.people}人 · {e.place||'未填写场地'}</span></div><i className={e.status}>{labels[e.status]||e.status}</i></button>)}</div>}
-  {current&&<div className="shade" onClick={()=>setCurrent(null)}><article onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setCurrent(null)}>×</button><i className={current.status}>{labels[current.status]}</i><h2>{current.name}</h2><p>{current.date} · {current.audience||'未填写对象'} · {current.people}人 · {current.place||'未填写场地'}</p><h3>活动流程</h3><pre>{current.flow||'暂未填写'}</pre><h3>物资准备 <small className="count">{current.materials.filter(x=>x.done).length}/{current.materials.length}</small></h3>{canEdit&&current.materials.length>0&&<div className="bulk-actions"><button onClick={()=>void setAllMaterials(current,true)} disabled={current.materials.every(x=>x.done)}>全部标记已准备</button><button onClick={()=>void setAllMaterials(current,false)} disabled={current.materials.every(x=>!x.done)}>全部重置</button></div>}{current.materials.length===0?<p className="muted">暂未填写物资。</p>:current.materials.map((m,i)=><label className="mat" key={i}><input type="checkbox" checked={m.done} disabled={!canEdit} onChange={()=>void updateMaterials(current,i)}/><span className={m.done?'done':''}>{m.name}</span><b>{m.qty}</b><small>{m.note}</small></label>)}{current.note&&<><h3>备注</h3><p>{current.note}</p></>}{canEdit&&<div className="actions"><button onClick={()=>{try{sessionStorage.setItem('pricing-calendar-draft',JSON.stringify({title:current.name,people:current.people,free:0}))}catch{};location.href='/'}}>进入定价</button><button onClick={()=>{setForm(current);setCurrent(null);setEditing(true)}}>编辑活动</button><button onClick={()=>duplicate(current)}>复制为新活动</button><button className="danger" onClick={()=>remove(current.id)}>删除</button></div>}</article></div>}
-  {editing&&<div className="shade"><article className="form"><button className="close" disabled={saving} onClick={()=>setEditing(false)}>×</button><h2>{form.id?'编辑活动':'新增活动'}</h2><label>日期<input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></label><label>活动名称<input maxLength={80} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><div className="two"><label>对象<input value={form.audience} onChange={e=>setForm({...form,audience:e.target.value})}/></label><label>人数<input type="number" min="0" value={form.people} onChange={e=>setForm({...form,people:Number(e.target.value)})}/></label></div><label>场地<input value={form.place} onChange={e=>setForm({...form,place:e.target.value})}/></label><label>状态<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{Object.entries(labels).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label><label>活动流程<textarea placeholder="例如：09:30 签到\n10:00 水稻课程\n10:30 水稻收割" value={form.flow} onChange={e=>setForm({...form,flow:e.target.value})}/></label><div className="material-editor-section"><div className="material-editor-title"><strong>物资清单</strong><button type="button" className="add-material" onClick={()=>setForm({...form,materials:[...form.materials,{name:'',qty:'',note:'',done:false}]})}>＋ 添加物资</button></div>{form.materials.length===0?<p className="muted">还没有物资。可逐项添加名称、数量和备注。</p>:form.materials.map((item,i)=><div className="material-editor" key={i}><label>物资名称<input maxLength={80} value={item.name} onChange={e=>setForm({...form,materials:form.materials.map((x,j)=>j===i?{...x,name:e.target.value}:x)})}/></label><label>数量<input maxLength={40} value={item.qty} onChange={e=>setForm({...form,materials:form.materials.map((x,j)=>j===i?{...x,qty:e.target.value}:x)})}/></label><label>备注<input maxLength={120} value={item.note} onChange={e=>setForm({...form,materials:form.materials.map((x,j)=>j===i?{...x,note:e.target.value}:x)})}/></label><button type="button" className="remove-material" aria-label={'删除 '+(item.name||'物资')} onClick={()=>setForm({...form,materials:form.materials.filter((_,j)=>j!==i)})}>删除</button></div>)}</div><label>备注<textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})}/></label><div className="form-actions"><button type="button" className="cancel-edit" disabled={saving} onClick={()=>setEditing(false)}>取消</button><button className="primary save" disabled={saving} onClick={save}>{saving?'正在保存…':'保存活动'}</button></div></article></div>}
- </main>
+  const load = async () => {
+    try {
+      const r = await fetch('/api/learning-calendar', { cache: 'no-store' });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setEvents(d.events || []);
+      setCanEdit(!!d.canEdit);
+      setError('');
+    } catch (e) {
+      const m = e instanceof Error ? e.message : '读取失败';
+      setError(
+        m.includes('no such table: learning_calendar_events')
+          ? '日历数据表尚未初始化，请先应用 0009_learning_calendar.sql 迁移。'
+          : m
+      );
+    }
+  };
+
+  const loadAccount = async () => {
+    try {
+      const r = await fetch('/api/account', { cache: 'no-store' });
+      const d = await r.json();
+      if (!r.ok) throw new Error();
+      setAccount(d);
+    } catch {
+      setAccount(null);
+    }
+  };
+
+  const signOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setCanEdit(false);
+    await loadAccount();
+    await load();
+  };
+
+  useEffect(() => {
+    void load();
+    void loadAccount();
+    // 检查 url query 是否有 action=new
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('action') === 'new') {
+        setForm(blank());
+        setEditing(true);
+      }
+    }
+  }, []);
+
+  const monthEvents = useMemo(() => events.filter((e) => e.date.startsWith(month)), [events, month]);
+  const list = useMemo(
+    () =>
+      monthEvents.filter(
+        (e) =>
+          (!query ||
+            `${e.name} ${e.audience} ${e.place} ${e.flow} ${e.note} ${e.materials
+              .map((x) => x.name + ' ' + x.note)
+              .join(' ')}`
+              .toLowerCase()
+              .includes(query.trim().toLowerCase())) &&
+          (statusFilter === 'all' ||
+            (statusFilter === 'followup'
+              ? e.status === 'pending' || e.status === 'booking'
+              : e.status === statusFilter))
+      ),
+    [monthEvents, query, statusFilter]
+  );
+
+  const selectedDayEvents = list.filter((e) => e.date === selectedDate);
+  const stats = useMemo(
+    () => ({
+      total: monthEvents.length,
+      people: monthEvents.reduce((s, e) => s + Number(e.people || 0), 0),
+      confirmed: monthEvents.filter((e) => e.status === 'confirmed').length,
+      pending: monthEvents.filter((e) => e.status === 'pending' || e.status === 'booking').length,
+    }),
+    [monthEvents]
+  );
+
+  const [y, m] = month.split('-').map(Number);
+  const first = new Date(y, m - 1, 1).getDay();
+  const count = new Date(y, m, 0).getDate();
+  const days = Array.from({ length: 42 }, (_, i) => {
+    const n = i - first + 1;
+    return n > 0 && n <= count ? n : null;
+  });
+
+  const shift = (n: number) => {
+    const d = new Date(y, m - 1 + n, 1);
+    const next = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    setMonth(next);
+    setSelectedDate(next + '-01');
+  };
+
+  const save = async () => {
+    if (saving) return;
+    setError('');
+    if (!form.name.trim()) {
+      setError('请填写活动名称');
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) {
+      setError('请选择有效日期');
+      return;
+    }
+    const body = form.id ? form : { ...form, id: crypto.randomUUID() };
+    try {
+      setSaving(true);
+      const r = await fetch('/api/learning-calendar', {
+        method: form.id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || '保存失败');
+      setEditing(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '保存失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateStatusDirect = async (event: E, newStatus: string) => {
+    const next = { ...event, status: newStatus };
+    setCurrent(next);
+    try {
+      const r = await fetch('/api/learning-calendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(next),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || '状态保存失败');
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '状态保存失败');
+    }
+  };
+
+  const updateMaterials = async (event: E, index: number) => {
+    const next = {
+      ...event,
+      materials: event.materials.map((x, j) => (j === index ? { ...x, done: !x.done } : x)),
+    };
+    setCurrent(next);
+    try {
+      const r = await fetch('/api/learning-calendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(next),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || '物资状态保存失败');
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '物资状态保存失败');
+    }
+  };
+
+  const setAllMaterials = async (event: E, done: boolean) => {
+    const next = { ...event, materials: event.materials.map((x) => ({ ...x, done })) };
+    try {
+      const r = await fetch('/api/learning-calendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(next),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || '批量更新物资状态失败');
+      setCurrent(next);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '批量更新物资状态失败');
+    }
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('确定删除这场活动吗？此操作无法撤销。')) return;
+    const r = await fetch('/api/learning-calendar', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({id}),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      setError(d.error || '删除失败');
+      return;
+    }
+    setCurrent(null);
+    await load();
+  };
+
+  const duplicate = (event: E) => {
+    setCurrent(null);
+    setError('');
+    setForm({
+      ...event,
+      id: '',
+      name: event.name + '（副本）',
+      status: 'pending',
+      materials: event.materials.map((x) => ({ ...x, done: false })),
+    });
+    setEditing(true);
+  };
+
+  const sendToPricing = (event: E) => {
+    try {
+      sessionStorage.setItem(
+        'pricing-calendar-draft',
+        JSON.stringify({
+          title: event.name,
+          people: event.people,
+          free: 0,
+        })
+      );
+    } catch {}
+    window.location.href = '/pricing';
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f7f2] text-[#1e2c22]">
+      <GlobalNav
+        active="calendar"
+        extraRight={
+          canEdit ? (
+            <button
+              onClick={() => {
+                setForm(blank());
+                setEditing(true);
+              }}
+              className="global-btn-cta"
+            >
+              <Plus className="w-4 h-4" /> 新增活动
+            </button>
+          ) : undefined
+        }
+      />
+      <style>{calendarStyles}</style>
+
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 py-8 space-y-6">
+        {/* 顶部标题区 */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-2 border-b border-[#e3ded2]">
+          <div>
+            <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">
+              OPERATIONS SCHEDULE
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1e2c22] mt-1">
+              研学排期日历
+            </h1>
+            <p className="text-xs sm:text-sm text-[#5d6e62] mt-1">
+              排期日程 · 团队规模 · 活动流程 · 物资备货追踪
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {account?.user ? (
+              <span className="text-xs px-3 py-1.5 rounded-lg bg-white border border-[#e3ded2] text-[#5d6e62]">
+                当前登录：<strong className="text-[#1e2c22]">{account.user.email}</strong>
+                {canEdit ? (
+                  <span className="ml-1.5 text-[#27563c] font-bold">（管理员）</span>
+                ) : (
+                  <span className="ml-1.5 text-amber-600 font-bold">（访客只读）</span>
+                )}
+              </span>
+            ) : account?.clientId ? (
+              <GoogleSignIn
+                clientId={account.clientId}
+                onSuccess={() => {
+                  void (async () => {
+                    await loadAccount();
+                    await load();
+                  })();
+                }}
+              />
+            ) : null}
+
+            {account?.user && (
+              <button
+                className="text-xs px-3 py-1.5 rounded-lg border border-[#e3ded2] bg-white hover:bg-gray-50 text-[#5d6e62]"
+                onClick={signOut}
+              >
+                切换账号
+              </button>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-3.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* 月度统计卡片 */}
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">本月活动场次</span>
+            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+              {stats.total} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+            </strong>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">预计参与总人数</span>
+            <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
+              {stats.people} <small className="text-xs font-normal text-[#5d6e62]">人</small>
+            </strong>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">已确定活动</span>
+            <strong className="block text-2xl font-extrabold text-[#16a34a] mt-1">
+              {stats.confirmed} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+            </strong>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">待跟进预约</span>
+            <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
+              {stats.pending} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+            </strong>
+          </div>
+        </section>
+
+        {/* 工具栏 (月份切换、搜索、状态筛选、视图切换) */}
+        <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="上个月"
+              onClick={() => shift(-1)}
+              className="w-8 h-8 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white flex items-center justify-center text-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <strong className="text-lg font-bold text-[#1e2c22] px-2">
+              {y} 年 {m} 月
+            </strong>
+            <button
+              aria-label="下个月"
+              onClick={() => shift(1)}
+              className="w-8 h-8 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white flex items-center justify-center text-sm"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setMonth(new Date().toISOString().slice(0, 7))}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c]"
+            >
+              回到本月
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 flex-1 max-w-md">
+            <input
+              placeholder="搜索活动名称、场地、流程或物资…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="flex-1 text-xs px-3 py-2 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white focus:outline-none focus:border-[#27563c]"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="text-xs px-3 py-2 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white text-[#1e2c22]"
+            >
+              <option value="all">全部状态</option>
+              <option value="followup">待跟进</option>
+              {Object.entries(labels).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-lg border border-[#e3ded2] p-0.5 bg-[#f8f7f2] text-xs">
+              <button
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                  view === 'calendar' ? 'bg-white text-[#27563c] shadow-sm' : 'text-[#5d6e62]'
+                }`}
+                onClick={() => setView('calendar')}
+              >
+                月历视图
+              </button>
+              <button
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                  view === 'list' ? 'bg-white text-[#27563c] shadow-sm' : 'text-[#5d6e62]'
+                }`}
+                onClick={() => setView('list')}
+              >
+                列表视图
+              </button>
+            </div>
+            {canEdit && (
+              <button
+                onClick={() => {
+                  setForm(blank());
+                  setEditing(true);
+                }}
+                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#27563c] text-white hover:bg-[#1e4530] flex items-center gap-1 shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" /> 新建
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 月历网格视图 */}
+        {view === 'calendar' && (
+          <section className="bg-white rounded-2xl border border-[#e3ded2] shadow-sm overflow-hidden">
+            <div className="grid grid-cols-7 bg-[#fbfaf7] border-b border-[#e3ded2] text-center text-xs font-bold text-[#5d6e62]">
+              {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map((day, i) => (
+                <div key={day} className={`py-3 ${i === 0 || i === 6 ? 'text-[#8b998e]' : ''}`}>
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 divide-x divide-y divide-[#f1eee5]">
+              {days.map((n, i) => {
+                const date = n ? month + '-' + String(n).padStart(2, '0') : '';
+                const es = list.filter((e) => e.date === date);
+                const isToday = date === new Date().toISOString().slice(0, 10);
+
+                return (
+                  <div
+                    key={i}
+                    className={`min-h-[110px] p-2 flex flex-col justify-between transition-colors ${
+                      n ? 'hover:bg-[#faf9f5]' : 'bg-[#faf9f6]/40'
+                    } ${isToday ? 'bg-[#edf5ef]/30' : ''}`}
+                  >
+                    {n && (
+                      <div className="flex justify-between items-center mb-1">
+                        <span
+                          className={`text-xs font-bold inline-flex items-center justify-center w-6 h-6 rounded-full ${
+                            isToday ? 'bg-[#27563c] text-white' : 'text-[#5d6e62]'
+                          }`}
+                        >
+                          {n}
+                        </span>
+                        {canEdit && (
+                          <button
+                            title={`在此日期安排活动`}
+                            onClick={() => {
+                              setForm({ ...blank(), date });
+                              setEditing(true);
+                            }}
+                            className="text-[#8b998e] hover:text-[#27563c] text-xs px-1 hover:bg-[#edf5ef] rounded"
+                          >
+                            ＋
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="space-y-1 overflow-y-auto max-h-[85px] scrollbar-none">
+                      {es.map((e) => (
+                        <button
+                          key={e.id}
+                          onClick={() => setCurrent(e)}
+                          className={`w-full text-left p-1.5 rounded-lg text-[11px] leading-tight block border transition-all ${
+                            e.status === 'confirmed'
+                              ? 'bg-[#edf5ef] text-[#27563c] border-[#c9e3d2]'
+                              : e.status === 'pending'
+                              ? 'bg-[#fef7ec] text-[#d97706] border-[#f7dfbe]'
+                              : e.status === 'booking'
+                              ? 'bg-[#eff6ff] text-[#2563eb] border-[#bfdbfe]'
+                              : 'bg-gray-100 text-gray-700 border-gray-200'
+                          }`}
+                        >
+                          <strong className="block truncate font-bold">{e.name}</strong>
+                          <span className="text-[10px] opacity-80 mt-0.5 block truncate">
+                            {e.people} 人 · {labels[e.status] || e.status}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* 列表视图 */}
+        {view === 'list' && (
+          <section className="bg-white rounded-2xl border border-[#e3ded2] shadow-sm overflow-hidden p-4">
+            {list.length === 0 ? (
+              <div className="py-16 text-center text-xs text-[#5d6e62]">
+                当前月份没有符合筛选条件的活动。
+              </div>
+            ) : (
+              <div className="divide-y divide-[#f1eee5]">
+                {list
+                  .slice()
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .map((e) => (
+                    <div
+                      key={e.id}
+                      onClick={() => setCurrent(e)}
+                      className="py-4 px-3 flex items-center justify-between gap-4 hover:bg-[#faf9f5] rounded-xl cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="text-center w-14 flex-shrink-0">
+                          <span className="block text-xl font-extrabold text-[#27563c]">
+                            {e.date.slice(8)}
+                          </span>
+                          <small className="text-[10px] text-[#5d6e62] block">
+                            {e.date.slice(0, 7)}
+                          </small>
+                        </div>
+                        <div className="min-w-0">
+                          <strong className="text-base font-bold text-[#1e2c22] block truncate">
+                            {e.name}
+                          </strong>
+                          <div className="flex items-center gap-3 text-xs text-[#5d6e62] mt-1 flex-wrap">
+                            <span>🎯 {e.audience || '对象未填'}</span>
+                            <span>👥 {e.people} 人</span>
+                            <span>📍 {e.place || '场地未填'}</span>
+                            <span>
+                              📦 物资：
+                              {e.materials.filter((x) => x.done).length}/{e.materials.length} 项
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span
+                          className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                            e.status === 'confirmed'
+                              ? 'bg-[#edf5ef] text-[#27563c]'
+                              : e.status === 'pending'
+                              ? 'bg-[#fef7ec] text-[#d97706]'
+                              : e.status === 'booking'
+                              ? 'bg-[#eff6ff] text-[#2563eb]'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {labels[e.status] || e.status}
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-[#8b998e]" />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* 活动详情模态弹窗 */}
+        {current && (
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setCurrent(null)}
+          >
+            <article
+              className="bg-white rounded-2xl border border-[#e3ded2] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 text-2xl"
+                onClick={() => setCurrent(null)}
+              >
+                ×
+              </button>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                      current.status === 'confirmed'
+                        ? 'bg-[#edf5ef] text-[#27563c]'
+                        : current.status === 'pending'
+                        ? 'bg-[#fef7ec] text-[#d97706]'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {labels[current.status]}
+                  </span>
+                  <span className="text-xs text-[#5d6e62]">{current.date}</span>
+                </div>
+                <h2 className="text-2xl font-extrabold text-[#1e2c22]">{current.name}</h2>
+                <div className="flex items-center gap-4 text-xs text-[#5d6e62]">
+                  <span>👥 对象：{current.audience || '未填写'}</span>
+                  <span>标定人数：{current.people} 人</span>
+                  <span>📍 场地：{current.place || '场地待定'}</span>
+                </div>
+              </div>
+
+              {/* 快捷状态变更 */}
+              {canEdit && (current.status === 'pending' || current.status === 'booking') && (
+                <div className="p-3 bg-[#fef7ec] border border-[#f7dfbe] rounded-xl flex items-center justify-between">
+                  <span className="text-xs text-[#8c5717]">当前活动处于【待跟进】状态</span>
+                  <button
+                    onClick={() => void updateStatusDirect(current, 'confirmed')}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#27563c] text-white hover:bg-[#1e4530]"
+                  >
+                    ✓ 一键确认为“已确定活动”
+                  </button>
+                </div>
+              )}
+
+              {/* 活动流程 */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-[#1e2c22] flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#27563c]" /> 活动流程与日程安排
+                </h3>
+                <div className="p-4 rounded-xl bg-[#f8f7f2] border border-[#e3ded2] text-xs leading-relaxed space-y-1.5">
+                  {current.flow ? (
+                    current.flow.split('\n').map((line, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <span className="text-[#27563c] font-bold">•</span>
+                        <span>{line}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-[#8b998e]">暂无填写的活动流程</span>
+                  )}
+                </div>
+              </div>
+
+              {/* 物资准备清单 */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-[#1e2c22] flex items-center gap-1.5">
+                    <PackageCheck className="w-4 h-4 text-[#27563c]" /> 物资准备清单
+                  </h3>
+                  <span className="text-xs font-bold text-[#27563c]">
+                    已备 {current.materials.filter((x) => x.done).length} / {current.materials.length}{' '}
+                    项 (
+                    {current.materials.length > 0
+                      ? Math.round(
+                          (current.materials.filter((x) => x.done).length /
+                            current.materials.length) *
+                            100
+                        )
+                      : 0}
+                    %)
+                  </span>
+                </div>
+
+                {/* 进度条 */}
+                <div className="w-full bg-[#f1eee5] h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-[#27563c] h-full transition-all duration-300"
+                    style={{
+                      width: `${
+                        current.materials.length > 0
+                          ? (current.materials.filter((x) => x.done).length /
+                              current.materials.length) *
+                            100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                {canEdit && current.materials.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => void setAllMaterials(current, true)}
+                      className="text-xs px-2.5 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c]"
+                    >
+                      全部标记为已准备
+                    </button>
+                    <button
+                      onClick={() => void setAllMaterials(current, false)}
+                      className="text-xs px-2.5 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#5d6e62]"
+                    >
+                      全部重置
+                    </button>
+                  </div>
+                )}
+
+                <div className="divide-y divide-[#f1eee5] border-t border-[#f1eee5]">
+                  {current.materials.length === 0 ? (
+                    <p className="py-4 text-xs text-[#8b998e]">暂未添加物资需求。</p>
+                  ) : (
+                    current.materials.map((m, i) => (
+                      <label
+                        key={i}
+                        className="py-2.5 flex items-center justify-between gap-3 text-xs cursor-pointer hover:bg-[#faf9f5] px-2 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={m.done}
+                            disabled={!canEdit}
+                            onChange={() => void updateMaterials(current, i)}
+                            className="rounded text-[#27563c] focus:ring-[#27563c]"
+                          />
+                          <span
+                            className={
+                              m.done ? 'line-through text-[#8b998e]' : 'font-semibold text-[#1e2c22]'
+                            }
+                          >
+                            {m.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[#5d6e62]">
+                          <span>{m.qty}</span>
+                          {m.note && <small className="text-[#8b998e]">（{m.note}）</small>}
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {current.note && (
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-[#1e2c22]">备注说明</h3>
+                  <p className="text-xs text-[#5d6e62] p-3 rounded-lg bg-[#f8f7f2] border border-[#e3ded2]">
+                    {current.note}
+                  </p>
+                </div>
+              )}
+
+              {/* 动作区 */}
+              <div className="pt-4 border-t border-[#f1eee5] flex flex-wrap justify-between items-center gap-3">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => sendToPricing(current)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-white"
+                  >
+                    <Calculator className="w-3.5 h-3.5" /> 带入定价台测算
+                  </button>
+                </div>
+
+                {canEdit && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setForm(current);
+                        setCurrent(null);
+                        setEditing(true);
+                      }}
+                      className="text-xs font-semibold px-3 py-2 rounded-xl border border-[#e3ded2] hover:bg-[#f8f7f2] text-[#1e2c22]"
+                    >
+                      编辑内容
+                    </button>
+                    <button
+                      onClick={() => duplicate(current)}
+                      className="text-xs font-semibold px-3 py-2 rounded-xl border border-[#e3ded2] hover:bg-[#f8f7f2] text-[#1e2c22] inline-flex items-center gap-1"
+                    >
+                      <Copy className="w-3.5 h-3.5" /> 复制副本
+                    </button>
+                    <button
+                      onClick={() => remove(current.id)}
+                      className="text-xs font-semibold px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> 删除
+                    </button>
+                  </div>
+                )}
+              </div>
+            </article>
+          </div>
+        )}
+
+        {/* 新增 / 编辑活动弹窗 */}
+        {editing && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <article
+              className="bg-white rounded-2xl border border-[#e3ded2] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 text-2xl"
+                disabled={saving}
+                onClick={() => setEditing(false)}
+              >
+                ×
+              </button>
+
+              <div>
+                <span className="text-xs font-bold text-[#5d6e62] uppercase">ACTIVITY EDITOR</span>
+                <h2 className="text-2xl font-extrabold text-[#1e2c22]">
+                  {form.id ? '编辑研学活动' : '安排新研学活动'}
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                  <span>活动日期</span>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                  />
+                </label>
+
+                <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                  <span>活动状态</span>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                  >
+                    {Object.entries(labels).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                <span>活动名称</span>
+                <input
+                  maxLength={80}
+                  placeholder="例如：江南水稻探秘研学实践一日营"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                />
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                  <span>研学对象（年级/团型）</span>
+                  <input
+                    placeholder="例如：小学 3-5 年级 / 亲子家庭"
+                    value={form.audience}
+                    onChange={(e) => setForm({ ...form, audience: e.target.value })}
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                  />
+                </label>
+
+                <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                  <span>预估参与人数（人）</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.people}
+                    onChange={(e) => setForm({ ...form, people: Number(e.target.value) })}
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                  />
+                </label>
+              </div>
+
+              <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                <span>活动场地</span>
+                <input
+                  value={form.place}
+                  onChange={(e) => setForm({ ...form, place: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                />
+              </label>
+
+              <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                <span>活动流程（每行一项时间与内容）</span>
+                <textarea
+                  rows={4}
+                  value={form.flow}
+                  onChange={(e) => setForm({ ...form, flow: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                />
+              </label>
+
+              {/* 物资编辑与快捷预设 */}
+              <div className="space-y-3 pt-2 border-t border-[#f1eee5]">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-[#1e2c22]">物资清单</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        materials: [...form.materials, { name: '', qty: '', note: '', done: false }],
+                      })
+                    }
+                    className="text-xs px-2.5 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c] font-semibold"
+                  >
+                    ＋ 添加一行
+                  </button>
+                </div>
+
+                {/* 快捷物资药丸 */}
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  <span className="text-[11px] text-[#5d6e62] flex items-center gap-1 font-semibold">
+                    <Sparkles className="w-3 h-3 text-[#d97706]" /> 常用物资快捷选用：
+                  </span>
+                  {quickMaterialPresets.map((preset, pIdx) => (
+                    <button
+                      key={pIdx}
+                      type="button"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          materials: [
+                            ...form.materials,
+                            { name: preset.name, qty: preset.qty, note: preset.note, done: false },
+                          ],
+                        })
+                      }
+                      className="text-[11px] px-2 py-0.5 rounded-md border border-[#e3ded2] bg-[#fbfaf7] hover:bg-white text-[#27563c]"
+                    >
+                      ＋ {preset.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  {form.materials.map((m, i) => (
+                    <div
+                      key={i}
+                      className="grid grid-cols-12 gap-2 p-2 bg-[#f8f7f2] rounded-lg items-center text-xs"
+                    >
+                      <input
+                        placeholder="物资名称"
+                        value={m.name}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            materials: form.materials.map((x, j) =>
+                              j === i ? { ...x, name: e.target.value } : x
+                            ),
+                          })
+                        }
+                        className="col-span-5 p-1.5 rounded border border-[#e3ded2] bg-white"
+                      />
+                      <input
+                        placeholder="数量要求"
+                        value={m.qty}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            materials: form.materials.map((x, j) =>
+                              j === i ? { ...x, qty: e.target.value } : x
+                            ),
+                          })
+                        }
+                        className="col-span-3 p-1.5 rounded border border-[#e3ded2] bg-white"
+                      />
+                      <input
+                        placeholder="备注"
+                        value={m.note}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            materials: form.materials.map((x, j) =>
+                              j === i ? { ...x, note: e.target.value } : x
+                            ),
+                          })
+                        }
+                        className="col-span-3 p-1.5 rounded border border-[#e3ded2] bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            materials: form.materials.filter((_, j) => j !== i),
+                          })
+                        }
+                        className="col-span-1 text-red-500 hover:text-red-700 text-center text-sm"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <label className="text-xs font-bold text-[#1e2c22] space-y-1 block">
+                <span>备注</span>
+                <textarea
+                  rows={2}
+                  value={form.note}
+                  onChange={(e) => setForm({ ...form, note: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white"
+                />
+              </label>
+
+              <div className="pt-3 border-t border-[#f1eee5] flex justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setEditing(false)}
+                  className="text-xs px-4 py-2 rounded-xl border border-[#e3ded2] hover:bg-[#f8f7f2]"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={save}
+                  className="text-xs font-bold px-5 py-2 rounded-xl bg-[#27563c] hover:bg-[#1e4530] text-white shadow-sm"
+                >
+                  {saving ? '保存中…' : '保存活动'}
+                </button>
+              </div>
+            </article>
+          </div>
+        )}
+      </main>
+
+      <footer className="global-footer">
+        <div className="global-footer-inner">
+          <div>
+            <strong>江南农耕研学 · 活动排期日历</strong>
+            <span className="ml-3 text-xs text-[#5d6e62]">
+              日程排期 · 团队跟踪 · 物资清单
+            </span>
+          </div>
+          <span>© 2026 江南农耕文化研学项目组</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
-const css=`  .bulk-actions{display:flex;gap:7px;margin:8px 0}.bulk-actions button{border:1px solid #d8d3c8;background:#fff;border-radius:8px;padding:7px 10px;color:#315c45;cursor:pointer;font-size:12px}.view-switch{display:flex;gap:4px;background:#f0eee7;border-radius:9px;padding:3px;margin-left:auto}.view-switch button{border:0;background:transparent;border-radius:7px;padding:6px 11px;color:#69736a;cursor:pointer;font:inherit;font-size:12px}.view-switch button.selected{background:#fff;color:#315c45;box-shadow:0 1px 4px #0001}.view-hidden{display:none!important}.form-actions{position:sticky;bottom:-25px;display:flex;justify-content:flex-end;gap:9px;margin:17px -25px -25px;padding:12px 25px 18px;background:linear-gradient(#fffe,#fff 20%);border-top:1px solid #eee9df}.cancel-edit{border:1px solid #d8d3c8;background:#fff;border-radius:9px;padding:10px 15px;cursor:pointer}.save:disabled,.cancel-edit:disabled,.close:disabled{opacity:.6;cursor:wait}.material-editor-section{margin:14px 0}.material-editor-title{display:flex;justify-content:space-between;align-items:center;margin:8px 0}.add-material,.remove-material{border:1px solid #d8d3c8;background:#fff;border-radius:8px;padding:7px 10px;cursor:pointer;color:#315c45}.remove-material{color:#a33b2c}.material-editor{display:grid;grid-template-columns:1.2fr .8fr 1.5fr auto;gap:8px;align-items:end;padding:10px;margin:8px 0;background:#f7f5ef;border-radius:10px}.material-editor label{display:grid;gap:4px;font-size:11px;color:#69736a}.material-editor input{min-width:0;width:100%;border:1px solid #dcd7cc;border-radius:8px;padding:8px;font:inherit}.toolbar input,.toolbar select{border:1px solid #ddd8cc;background:#fff;border-radius:9px;padding:9px 11px;font:inherit;color:#29372e}.toolbar input{min-width:220px}.day-head{display:flex;justify-content:space-between;align-items:center}.day-head button{border:0;background:transparent;color:#315c45;font-size:15px;cursor:pointer;border-radius:6px}.day-head button:hover{background:#edf4ed}.header-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}.account-label,.permission-note{font-size:12px;color:#758075}.switch-account{border:1px solid #ddd8cc;background:#fff;border-radius:9px;padding:9px 12px;cursor:pointer}.overview{background:#fff;border:1px solid #e3dfd5;border-radius:14px;padding:18px;margin:18px 0}.overview-head{display:flex;justify-content:space-between;align-items:center}.overview-head h2{margin:0 0 3px;font-size:19px}.overview-head span{font-size:12px;color:#899187}.overview-head a{font-size:12px;color:#315c45;text-decoration:none}.overview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:15px}.overview-grid div{background:#f7f5ef;border-radius:10px;padding:12px}.overview-grid b,.overview-grid span{display:block}.overview-grid b{font-size:23px}.overview-grid span{font-size:11px;color:#7b8479;margin-top:3px}.focus{margin-top:12px;border-top:1px solid #eee9df}.focus button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 0;border:0;border-bottom:1px solid #eee9df;background:none;text-align:left;cursor:pointer}.focus strong{font-size:17px;width:45px}.focus span{flex:1}.focus small{display:block;font-size:11px;color:#899187;margin-top:3px}.focus i{font-style:normal;font-size:11px;color:#806c31;background:#f7f1df;border-radius:999px;padding:5px 8px}.focus p{font-size:12px;color:#899187;margin:12px 0 2px}.overview+ .toolbar{margin-top:15px}*{box-sizing:border-box}.calendar{min-height:100vh;background:#f7f5ef;color:#29372e;padding:26px 32px;max-width:1240px;margin:auto;font-family:system-ui,-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}.subnav{display:flex;gap:18px;align-items:center;margin-bottom:28px;font-size:13px}.subnav a{color:#667268;text-decoration:none}.subnav span{font-weight:700;color:#315c45}.calendar header{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px}.calendar header h1{font-size:36px;margin:7px 0}.calendar header p,.calendar header>span{color:#758075}.calendar header small{letter-spacing:1.5px;color:#8b9388}.primary{border:0;border-radius:10px;background:#315c45;color:white;padding:11px 16px;font-weight:700;cursor:pointer}.error{padding:10px 13px;background:#fff0ed;color:#a33b2c;border-radius:10px;margin-bottom:12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.stats article{background:#fff;border:1px solid #e4dfd5;border-radius:13px;padding:15px 17px}.stats small{display:block;color:#7b8479}.stats strong{display:block;font-size:27px;margin-top:7px}.stats i{font-size:12px;font-style:normal;font-weight:500;margin-left:4px;color:#7b8479}.toolbar{display:flex;gap:10px;align-items:center;margin:15px 0}.toolbar button{border:1px solid #ddd8cc;background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer}.toolbar b{font-size:21px}.toolbar span{margin-left:auto;color:#7b8479}.cal{background:#fff;border:1px solid #e3dfd5;border-radius:14px;overflow:hidden}.week,.grid{display:grid;grid-template-columns:repeat(7,1fr)}.week{background:#f0eee7}.week b{text-align:center;padding:10px;color:#777f75}.day{min-height:112px;border-top:1px solid #eee9df;border-right:1px solid #eee9df;padding:7px}.day:nth-child(7n){border-right:0}.day em{font-style:normal;color:#737c72;font-size:12px}.event{display:block;width:100%;border:0;border-radius:7px;text-align:left;margin:5px 0;padding:6px;background:#edf4ed;color:#315c45;font-size:12px;cursor:pointer}.event.pending{background:#f7f1df;color:#806c31}.event.booking{background:#edf2f8;color:#4a637c}.event.completed{background:#ececec;color:#666}.event.cancelled{background:#f8eaea;color:#9a4c4c}.event small{display:block;margin-top:3px;color:#7a8378}.list-head{display:flex;align-items:center;margin:25px 0 8px}.list-head h2{margin:0}.list-head span{font-size:12px;color:#899187;margin-left:12px}.row{display:flex;align-items:center;width:100%;border:1px solid #e4dfd5;background:#fff;border-radius:12px;padding:11px;margin:7px 0;text-align:left;cursor:pointer}.row strong{font-size:24px;width:55px}.row strong small{font-size:11px}.row div{flex:1}.row b,.row span{display:block}.row span{font-size:12px;color:#7b8479;margin-top:4px}.row i,article>i{font-style:normal;background:#edf4ed;color:#315c45;border-radius:999px;padding:5px 8px;font-size:11px}.row i.pending,article>i.pending{background:#f7f1df;color:#806c31}.row i.booking,article>i.booking{background:#edf2f8;color:#4a637c}.empty{background:#fff;border:1px dashed #d9d4c9;border-radius:12px;padding:25px;text-align:center;color:#7b8479}.shade{position:fixed;inset:0;background:#0006;display:flex;align-items:center;justify-content:center;padding:18px;z-index:10}.shade article{background:#fff;border-radius:16px;width:min(680px,100%);max-height:90vh;overflow:auto;padding:25px;position:relative}.close{position:absolute;right:15px;top:10px;border:0;background:none;font-size:27px;cursor:pointer}.shade h2{font-size:27px;margin:14px 0 5px}.shade h3{font-size:14px;margin:18px 0 8px}.shade h3 .count{float:right;color:#899187;font-weight:400}pre{background:#f7f5ef;border-radius:9px;padding:12px;white-space:pre-wrap;margin:0}.mat{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:9px;border-bottom:1px solid #eee;align-items:center}.mat small{grid-column:2/-1;color:#8a9185}.mat .done{text-decoration:line-through;color:#999}.actions{display:flex;gap:8px;margin-top:20px}.actions button{border:1px solid #d8d3c8;background:#fff;border-radius:8px;padding:9px 13px;cursor:pointer}.actions .danger{color:#a33b2c}.form label{display:grid;gap:5px;margin:11px 0;font-size:13px;color:#69736a}.form input,.form select,.form textarea{border:1px solid #dcd7cc;border-radius:8px;padding:9px;font:inherit}.form textarea{min-height:90px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.save{margin-top:7px}.muted{color:#899187}@media(max-width:700px){.calendar{padding:17px}.calendar header{align-items:flex-start}.calendar h1{font-size:29px}.stats{grid-template-columns:repeat(2,1fr)}.cal{overflow:auto}.week,.grid{min-width:700px}.day{min-height:96px}.toolbar span{display:none}.toolbar input{min-width:0;flex:1}.toolbar select{max-width:130px}.subnav{overflow:auto;white-space:nowrap}.two{grid-template-columns:1fr}.cal{display:none!important}.event-list{display:none!important}.event-list.view-active{display:block!important}.mobile-agenda{display:block!important}.mobile-calendar{display:block!important}.mobile-calendar.view-hidden{display:none!important}.mobile-agenda .view-hidden{display:none!important}.material-editor{grid-template-columns:1fr 1fr}.material-editor label:first-child{grid-column:1/-1}.material-editor .remove-material{justify-self:end}.mobile-agenda{display:none}.mobile-calendar{background:#fff;border:1px solid #e3dfd5;border-radius:13px;overflow:hidden}.mobile-week,.mobile-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.mobile-week{background:#f0eee7}.mobile-week b{text-align:center;padding:9px 0;font-size:11px;color:#7b8479}.mobile-days{padding:5px}.mobile-day{height:48px;border:0;background:transparent;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#38483d;font:inherit;cursor:pointer}.mobile-day span{font-size:12px}.mobile-day i{font-style:normal;font-size:8px;color:#315c45;background:#edf4ed;border-radius:999px;padding:0 5px}.mobile-day.selected{background:#315c45;color:#fff}.mobile-day.selected i{background:#ffffff30;color:#fff}.mobile-day.today span{font-weight:800}.mobile-day.blank{cursor:default}.mobile-day-heading{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-top:1px solid #eee9df}.mobile-day-heading>div{display:flex;align-items:baseline;gap:7px}.mobile-day-heading span,.mobile-day-heading small{font-size:10px;color:#899187}.mobile-day-heading strong{font-size:16px}.mobile-add{border:0;background:#edf4ed;color:#315c45;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer}.mobile-empty{margin:0;padding:13px 14px 16px;color:#899187;font-size:11px;border-top:1px solid #f0eee8}.mobile-empty span{display:block;margin-top:5px}.mobile-events{border-top:1px solid #eee9df}.mobile-event{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border:0;border-bottom:1px solid #f0eee8;background:#fff;text-align:left;cursor:pointer}.mobile-dot{width:8px;height:8px;border-radius:50%;background:#62836a;flex:none}.mobile-dot.pending{background:#c59e45}.mobile-dot.booking{background:#6683a1}.mobile-dot.cancelled{background:#b36c65}.mobile-event-copy{flex:1;min-width:0}.mobile-event-copy strong,.mobile-event-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mobile-event-copy strong{font-size:12px}.mobile-event-copy small{margin-top:4px;font-size:10px;color:#899187}.mobile-event i{font-style:normal;font-size:9px;color:#6e796e}.mobile-event>b{font-size:19px;color:#9ca49b}}`;
+const calendarStyles = `
+  /* 自定义滚动条 */
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none { scrollbar-width: none; }
+`;

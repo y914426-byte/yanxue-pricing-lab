@@ -1,39 +1,503 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
-import {GoogleSignIn} from '@/components/google-sign-in';
+import { useEffect, useMemo, useState } from 'react';
+import { GoogleSignIn } from '@/components/google-sign-in';
+import { GlobalNav } from '@/components/global-nav';
+import { Printer, PackageCheck, AlertCircle, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 
-type M={name:string;qty:string;note:string;done:boolean};
-type E={id:string;date:string;name:string;audience:string;people:number;place:string;status:string;flow:string;materials:M[];note:string};
-type A={user:{displayName:string;email:string}|null;clientId:string|null};
-type Use={eventId:string;materialIndex:number;date:string;eventName:string;qty:string;done:boolean;note:string};
-type Item={name:string;unit:string;total:number;uses:Use[]};
+type M = { name: string; qty: string; note: string; done: boolean };
+type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
+type A = { user: { displayName: string; email: string } | null; clientId: string | null };
+type Use = { eventId: string; materialIndex: number; date: string; eventName: string; qty: string; done: boolean; note: string };
+type Item = { name: string; unit: string; total: number; uses: Use[] };
 
-function parseQty(q:string){const m=String(q||'').trim().match(/([0-9]+(?:\.[0-9]+)?)\s*(.*)$/);return m?{num:Number(m[1]),unit:m[2]||''}:{num:0,unit:''}}
-const errorText=(value:string)=>value.includes('no such table: learning_calendar_events')?'日历数据表尚未初始化，请先应用 0009_learning_calendar.sql 迁移。':value;
-
-export default function Materials(){
- const [events,setEvents]=useState<E[]>([]),[month,setMonth]=useState(new Date().toISOString().slice(0,7)),[loading,setLoading]=useState(true),[error,setError]=useState(''),[account,setAccount]=useState<A|undefined>(),[canEdit,setCanEdit]=useState(false),[query,setQuery]=useState(''),[filter,setFilter]=useState<'all'|'pending'|'ready'>('all'),[saving,setSaving]=useState(''),[drafts,setDrafts]=useState<Record<string,{qty?:string;note?:string}>>({});
- const load=async(showLoading=true)=>{if(showLoading)setLoading(true);try{const r=await fetch('/api/learning-calendar',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||'读取失败');setEvents(d.events||[]);setCanEdit(!!d.canEdit);setError('')}catch(e){setError(errorText(e instanceof Error?e.message:'读取失败'))}finally{if(showLoading)setLoading(false)}};
- const loadAccount=async()=>{try{const r=await fetch('/api/account',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error();setAccount(d)}catch{setAccount(null)}};
- const signOut=async()=>{await fetch('/api/auth/logout',{method:'POST'});setCanEdit(false);await loadAccount();await load()};
- useEffect(()=>{void load();void loadAccount()},[]);
- const monthEvents=useMemo(()=>events.filter(e=>e.date.startsWith(month)),[events,month]);
- const items=useMemo(()=>{const map=new Map<string,Item>();for(const e of monthEvents)for(const [i,m] of (e.materials||[]).entries()){const name=String(m.name||'').trim();if(!name)continue;const q=parseQty(m.qty);const item=map.get(name)||{name,unit:q.unit,total:0,uses:[]};if(q.unit&&!item.unit)item.unit=q.unit;item.total+=q.num;item.uses.push({eventId:e.id,materialIndex:i,date:e.date,eventName:e.name,qty:String(m.qty||''),done:!!m.done,note:String(m.note||'')});map.set(name,item)}return [...map.values()].sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,'zh-CN'))},[monthEvents]);
- const visible=useMemo(()=>items.map(item=>({...item,uses:item.uses.filter(use=>(!query||`${item.name} ${use.eventName} ${use.note}`.toLowerCase().includes(query.trim().toLowerCase()))&&(filter==='all'||(filter==='pending'?!use.done:use.done)))})).filter(item=>item.uses.length>0),[items,query,filter]);
- const uses=items.flatMap(item=>item.uses),pending=uses.filter(x=>!x.done).length,ready=uses.length-pending,people=monthEvents.reduce((sum,e)=>sum+Number(e.people||0),0);
- const shift=(n:number)=>{const [y,m]=month.split('-').map(Number),d=new Date(y,m-1+n,1);setMonth(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'))};
- const updateUse=async(use:Use,patch:Partial<Pick<M,'qty'|'note'|'done'>>)=>{if(!canEdit)return;const key=use.eventId+':'+use.materialIndex,source=events.find(e=>e.id===use.eventId);if(!source)return;setSaving(key);setError('');const next={...source,materials:source.materials.map((m,i)=>i===use.materialIndex?{...m,...patch}:m)};try{const r=await fetch('/api/learning-calendar',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),d=await r.json();if(!r.ok)throw Error(d.error||'保存失败');setDrafts(old=>({...old,[key]:{...old[key],...(patch.qty!==undefined?{qty:undefined}:{}),...(patch.note!==undefined?{note:undefined}:{})}}));await load(false)}catch(e){setError(errorText(e instanceof Error?e.message:'保存失败'))}finally{setSaving('')}};
- const commitField=async(use:Use,field:'qty'|'note')=>{const key=use.eventId+':'+use.materialIndex,value=drafts[key]?.[field]??use[field];if(value!==use[field])await updateUse(use,field==='qty'?{qty:value}:{note:value});else setDrafts(old=>({...old,[key]:{...old[key],[field]:undefined}}))};
- return <main className="materials"><style>{css}</style>
-  <nav className="ops-nav"><a href="/">运营总览</a><a href="/yanxue-calendar">← 活动日历</a><b>研学运营中心</b><a className="active" href="/yanxue-calendar/materials">物资中心</a><a href="/scheme-import">方案导入</a><a href="/">定价台</a></nav>
-  <header className="materials-header"><div><small>YANXUE OPERATIONS · MATERIALS</small><h1>物资中心</h1><p>按月汇总备货需求；管理员可以在清单中直接更新准备状态。</p></div><div className="account-tools">{account?.user?<><span className="account-email">{account.user.email}</span>{canEdit?<span className="admin-badge">管理员</span>:<span className="readonly-badge">只读</span>}<button className="quiet-button" onClick={signOut}>切换账号</button></>:account?.clientId?<GoogleSignIn clientId={account.clientId} onSuccess={()=>{void (async()=>{await loadAccount();await load()})()}}/>:account===undefined?<span className="muted">正在检查登录状态…</span>:<span className="muted">Google 登录暂不可用</span>}</div></header>
-  {error&&<div className="error" role="alert">{error}</div>}
-  <section className="summary"><article><small>本月活动</small><strong>{monthEvents.length}<i>场</i></strong></article><article><small>物资种类</small><strong>{items.length}<i>项</i></strong></article><article><small>待准备</small><strong>{pending}<i>项</i></strong></article><article><small>已准备</small><strong>{ready}<i>项</i></strong></article><article><small>预计参与</small><strong>{people}<i>人</i></strong></article></section>
-  <section className="controls"><div className="month-picker"><button aria-label="上个月" onClick={()=>shift(-1)}>‹</button><strong>{month.slice(0,4)}年{Number(month.slice(5))}月</strong><button aria-label="下个月" onClick={()=>shift(1)}>›</button><button onClick={()=>setMonth(new Date().toISOString().slice(0,7))}>本月</button></div><input className="search" aria-label="搜索物资" placeholder="搜索物资、活动或备注" value={query} onChange={e=>setQuery(e.target.value)}/><div className="filters" aria-label="物资状态筛选"><button className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>全部</button><button className={filter==='pending'?'selected':''} onClick={()=>setFilter('pending')}>待准备</button><button className={filter==='ready'?'selected':''} onClick={()=>setFilter('ready')}>已准备</button></div></section>
-  {!canEdit&&<div className="readonly-note">{account?.user?'当前账号没有日历编辑权限。':'登录管理员账号后可直接勾选物资准备状态。'} <a href="/yanxue-calendar">前往活动日历</a></div>}
-  {loading?<div className="empty">正在读取物资清单…</div>:visible.length===0?<div className="empty">{items.length===0?'本月活动暂未填写物资。':'没有符合当前搜索和筛选条件的物资。'}{canEdit&&<a href="/yanxue-calendar"> 返回活动日历添加或编辑物资 →</a>}</div>:<section className="item-list" aria-label="物资清单">{visible.map(item=><article className="item-card" key={item.name}><header className="item-heading"><div><h2>{item.name}</h2>{item.unit&&<small>单位：{item.unit}</small>}</div><strong className="total">{item.total?item.total+(item.unit?' '+item.unit:''):item.uses.map(x=>x.qty).join('、')}</strong></header><div className="use-list">{item.uses.map(use=>{const key=use.eventId+':'+use.materialIndex;return <div className="use-row" key={key}><div className="use-info"><time>{use.date}</time><strong>{use.eventName}</strong><div className="use-meta">{canEdit?<><label>数量<input aria-label={'数量 '+item.name} value={drafts[key]?.qty??use.qty} disabled={saving===key} onChange={e=>setDrafts(old=>({...old,[key]:{...old[key],qty:e.target.value}}))} onBlur={()=>void commitField(use,'qty')} onKeyDown={e=>{if(e.key==='Enter')e.currentTarget.blur()}}/></label><label>备注<input aria-label={'备注 '+item.name} value={drafts[key]?.note??use.note} disabled={saving===key} onChange={e=>setDrafts(old=>({...old,[key]:{...old[key],note:e.target.value}}))} onBlur={()=>void commitField(use,'note')} onKeyDown={e=>{if(e.key==='Enter')e.currentTarget.blur()}}/></label></>:<span>{use.qty||'数量未填'}{use.note?' · '+use.note:''}</span>}</div></div><button className={'status-toggle '+(use.done?'ready':'pending')} disabled={!canEdit||saving===key} aria-pressed={use.done} onClick={()=>void updateUse(use,{done:!use.done})}>{saving===key?'保存中…':use.done?'✓ 已准备':'○ 待准备'}</button></div>})}</div></article>)}</section>}
-  <footer className="page-footer"><span>清单按活动汇总。同名物资会合并显示，各场活动的准备状态分别保存。</span>{canEdit&&<a href="/yanxue-calendar">编辑活动内容 →</a>}</footer>
- </main>
+function parseQty(q: string) {
+  const m = String(q || '').trim().match(/([0-9]+(?:\.[0-9]+)?)\s*(.*)$/);
+  return m ? { num: Number(m[1]), unit: m[2] || '' } : { num: 0, unit: '' };
 }
-const css=`*{box-sizing:border-box}.materials{min-height:100vh;background:#f7f5ef;color:#29372e;padding:26px 32px;max-width:1240px;margin:auto;font-family:system-ui,-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}.ops-nav{display:flex;gap:18px;align-items:center;margin-bottom:34px;font-size:13px;white-space:nowrap;overflow:auto}.ops-nav a{color:#667268;text-decoration:none}.ops-nav a.active,.ops-nav b{color:#315c45;font-weight:700}.materials-header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:24px}.materials-header small{letter-spacing:1.5px;color:#8b9388}.materials h1{font-size:36px;margin:7px 0}.materials-header p{color:#758075;margin:0}.account-tools{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}.account-email,.muted{font-size:12px;color:#758075}.admin-badge,.readonly-badge{font-size:11px;border-radius:999px;padding:6px 9px;background:#edf4ed;color:#315c45}.readonly-badge{background:#f7f1df;color:#806c31}.quiet-button,.month-picker button,.filters button{border:1px solid #ddd8cc;background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer;color:#29372e}.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0}.summary article{background:#fff;border:1px solid #e4dfd5;border-radius:13px;padding:15px 17px}.summary small{display:block;color:#7b8479}.summary strong{display:block;font-size:27px;margin-top:7px}.summary i{font-size:12px;font-style:normal;font-weight:500;margin-left:4px;color:#7b8479}.controls{display:flex;align-items:center;gap:12px;margin:18px 0}.month-picker{display:flex;align-items:center;gap:8px;white-space:nowrap}.month-picker strong{font-size:19px}.search{flex:1;min-width:150px;border:1px solid #ddd8cc;background:#fff;border-radius:9px;padding:10px 12px;font:inherit}.filters{display:flex;gap:6px}.filters button{font-size:12px}.filters button.selected{background:#315c45;border-color:#315c45;color:#fff}.readonly-note{background:#fff;border:1px solid #e4dfd5;border-radius:10px;padding:11px 14px;color:#758075;font-size:12px;margin-bottom:12px}.readonly-note a,.empty a,.page-footer a{color:#315c45;text-decoration:none;font-weight:600;margin-left:5px}.item-list{display:grid;gap:12px}.item-card{background:#fff;border:1px solid #e3dfd5;border-radius:14px;overflow:hidden}.item-heading{display:flex;justify-content:space-between;align-items:center;padding:15px 17px;background:#fbfaf7}.item-heading h2{font-size:17px;margin:0}.item-heading small{display:block;color:#899187;font-size:11px;margin-top:4px}.total{font-size:17px;color:#315c45}.use-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px 17px;border-top:1px solid #eee9df}.use-info{display:grid;grid-template-columns:92px minmax(120px,1fr);align-items:center;gap:3px 10px;min-width:0}.use-info time{font-size:12px;color:#758075}.use-info strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.use-meta{grid-column:2;display:flex;gap:8px;min-width:0}.use-meta label{display:grid;grid-template-columns:auto minmax(50px,1fr);align-items:center;gap:4px;color:#899187;font-size:10px}.use-meta input{width:100%;min-width:55px;border:1px solid #e4dfd5;border-radius:6px;padding:5px 6px;font:inherit;color:#29372e}.use-meta span{font-size:11px;color:#899187;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.status-toggle{min-width:94px;border:0;border-radius:999px;padding:8px 11px;font-size:12px;cursor:pointer}.status-toggle.pending{background:#f7f1df;color:#806c31}.status-toggle.ready{background:#edf4ed;color:#315c45}.status-toggle:disabled{cursor:default;opacity:.7}.empty{background:#fff;border:1px dashed #d9d4c9;border-radius:12px;padding:28px;text-align:center;color:#7b8479}.error{padding:10px 13px;background:#fff0ed;color:#a33b2c;border-radius:10px;margin-bottom:12px}.page-footer{display:flex;justify-content:space-between;gap:12px;color:#899187;font-size:12px;margin-top:16px}@media(max-width:900px){.summary{grid-template-columns:repeat(3,1fr)}.controls{flex-wrap:wrap}.month-picker{width:100%}.search{min-width:220px}}@media(max-width:650px){.materials{padding:17px}.ops-nav{margin-bottom:25px}.materials-header{display:block}.account-tools{justify-content:flex-start;margin-top:15px}.materials h1{font-size:30px}.summary{grid-template-columns:repeat(2,1fr)}.controls{align-items:stretch}.search{width:100%;flex:1 0 100%}.filters{width:100%}.filters button{flex:1}.use-row{align-items:flex-start}.use-info{grid-template-columns:1fr;gap:3px}.use-meta{grid-column:1;flex-wrap:wrap}.use-meta label{grid-template-columns:auto minmax(90px,1fr);flex:1}.status-toggle{min-width:92px}.page-footer{display:block}.page-footer a{display:block;margin:8px 0 0}}`;
+
+const errorText = (value: string) =>
+  value.includes('no such table: learning_calendar_events')
+    ? '日历数据表尚未初始化，请先应用 0009_learning_calendar.sql 迁移。'
+    : value;
+
+export default function Materials() {
+  const [events, setEvents] = useState<E[]>([]);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [account, setAccount] = useState<A | undefined>();
+  const [canEdit, setCanEdit] = useState(false);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'ready'>('all');
+  const [saving, setSaving] = useState('');
+  const [drafts, setDrafts] = useState<Record<string, { qty?: string; note?: string }>>({});
+
+  const load = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    try {
+      const r = await fetch('/api/learning-calendar', { cache: 'no-store' });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || '读取失败');
+      setEvents(d.events || []);
+      setCanEdit(!!d.canEdit);
+      setError('');
+    } catch (e) {
+      setError(errorText(e instanceof Error ? e.message : '读取失败'));
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
+
+  const loadAccount = async () => {
+    try {
+      const r = await fetch('/api/account', { cache: 'no-store' });
+      const d = await r.json();
+      if (!r.ok) throw new Error();
+      setAccount(d);
+    } catch {
+      setAccount(null);
+    }
+  };
+
+  const signOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setCanEdit(false);
+    await loadAccount();
+    await load();
+  };
+
+  useEffect(() => {
+    void load();
+    void loadAccount();
+  }, []);
+
+  const monthEvents = useMemo(() => events.filter((e) => e.date.startsWith(month)), [events, month]);
+
+  const items = useMemo(() => {
+    const map = new Map<string, Item>();
+    for (const e of monthEvents) {
+      for (const [i, m] of (e.materials || []).entries()) {
+        const name = String(m.name || '').trim();
+        if (!name) continue;
+        const q = parseQty(m.qty);
+        const item = map.get(name) || { name, unit: q.unit, total: 0, uses: [] };
+        if (q.unit && !item.unit) item.unit = q.unit;
+        item.total += q.num;
+        item.uses.push({
+          eventId: e.id,
+          materialIndex: i,
+          date: e.date,
+          eventName: e.name,
+          qty: String(m.qty || ''),
+          done: !!m.done,
+          note: String(m.note || ''),
+        });
+        map.set(name, item);
+      }
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'zh-CN'));
+  }, [monthEvents]);
+
+  const visible = useMemo(
+    () =>
+      items
+        .map((item) => ({
+          ...item,
+          uses: item.uses.filter(
+            (use) =>
+              (!query ||
+                `${item.name} ${use.eventName} ${use.note}`.toLowerCase().includes(query.trim().toLowerCase())) &&
+              (filter === 'all' || (filter === 'pending' ? !use.done : use.done))
+          ),
+        }))
+        .filter((item) => item.uses.length > 0),
+    [items, query, filter]
+  );
+
+  const uses = items.flatMap((item) => item.uses);
+  const pending = uses.filter((x) => !x.done).length;
+  const ready = uses.length - pending;
+  const people = monthEvents.reduce((sum, e) => sum + Number(e.people || 0), 0);
+
+  const shift = (n: number) => {
+    const [y, m] = month.split('-').map(Number);
+    const d = new Date(y, m - 1 + n, 1);
+    setMonth(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  };
+
+  const updateUse = async (use: Use, patch: Partial<Pick<M, 'qty' | 'note' | 'done'>>) => {
+    if (!canEdit) return;
+    const key = use.eventId + ':' + use.materialIndex;
+    const source = events.find((e) => e.id === use.eventId);
+    if (!source) return;
+    setSaving(key);
+    setError('');
+    const next = {
+      ...source,
+      materials: source.materials.map((m, i) => (i === use.materialIndex ? { ...m, ...patch } : m)),
+    };
+    try {
+      const r = await fetch('/api/learning-calendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(next),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || '保存失败');
+      setDrafts((old) => ({
+        ...old,
+        [key]: {
+          ...old[key],
+          ...(patch.qty !== undefined ? { qty: undefined } : {}),
+          ...(patch.note !== undefined ? { note: undefined } : {}),
+        },
+      }));
+      await load(false);
+    } catch (e) {
+      setError(errorText(e instanceof Error ? e.message : '保存失败'));
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const commitField = async (use: Use, field: 'qty' | 'note') => {
+    const key = use.eventId + ':' + use.materialIndex;
+    const value = drafts[key]?.[field] ?? use[field];
+    if (value !== use[field]) {
+      await updateUse(use, field === 'qty' ? { qty: value } : { note: value });
+    } else {
+      setDrafts((old) => ({ ...old, [key]: { ...old[key], [field]: undefined } }));
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f7f2] text-[#1e2c22]">
+      <GlobalNav
+        active="materials"
+        extraRight={
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="global-btn-cta"
+            style={{ background: '#ffffff', color: '#27563c', border: '1px solid #e3ded2' }}
+          >
+            <Printer className="w-4 h-4" /> 打印备货清单
+          </button>
+        }
+      />
+      <style>{materialsStyles}</style>
+
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 py-8 space-y-6">
+        {/* 顶部标题区 */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-2 border-b border-[#e3ded2]">
+          <div>
+            <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">
+              OPERATIONS · MATERIALS HUB
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1e2c22] mt-1">
+              研学物资准备中心
+            </h1>
+            <p className="text-xs sm:text-sm text-[#5d6e62] mt-1">
+              按月汇总全园活动物资需求；后勤与带班导师协同备货，直观勾选准备状态。
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {account?.user ? (
+              <span className="text-xs px-3 py-1.5 rounded-lg bg-white border border-[#e3ded2] text-[#5d6e62]">
+                当前登录：<strong className="text-[#1e2c22]">{account.user.email}</strong>
+                {canEdit ? (
+                  <span className="ml-1.5 text-[#27563c] font-bold">（管理员）</span>
+                ) : (
+                  <span className="ml-1.5 text-amber-600 font-bold">（访客只读）</span>
+                )}
+              </span>
+            ) : account?.clientId ? (
+              <GoogleSignIn
+                clientId={account.clientId}
+                onSuccess={() => {
+                  void (async () => {
+                    await loadAccount();
+                    await load();
+                  })();
+                }}
+              />
+            ) : null}
+
+            {account?.user && (
+              <button
+                className="text-xs px-3 py-1.5 rounded-lg border border-[#e3ded2] bg-white hover:bg-gray-50 text-[#5d6e62]"
+                onClick={signOut}
+              >
+                切换账号
+              </button>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-3.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* 汇总统计看板 */}
+        <section className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">本月活动场次</span>
+            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+              {monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+            </strong>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">物资品类总数</span>
+            <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
+              {items.length} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+            </strong>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">待准备事项</span>
+            <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
+              {pending} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+            </strong>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
+            <span className="text-xs text-[#5d6e62]">已就绪完成</span>
+            <strong className="block text-2xl font-extrabold text-[#16a34a] mt-1">
+              {ready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+            </strong>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm col-span-2 sm:col-span-1">
+            <span className="text-xs text-[#5d6e62]">预计参与总人数</span>
+            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+              {people} <small className="text-xs font-normal text-[#5d6e62]">人</small>
+            </strong>
+          </div>
+        </section>
+
+        {/* 筛选与操作栏 */}
+        <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="上个月"
+              onClick={() => shift(-1)}
+              className="px-2 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-xs font-bold"
+            >
+              ‹
+            </button>
+            <strong className="text-base font-bold text-[#1e2c22] px-2">
+              {month.slice(0, 4)} 年 {Number(month.slice(5))} 月
+            </strong>
+            <button
+              aria-label="下个月"
+              onClick={() => shift(1)}
+              className="px-2 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-xs font-bold"
+            >
+              ›
+            </button>
+            <button
+              onClick={() => setMonth(new Date().toISOString().slice(0, 7))}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c]"
+            >
+              回到本月
+            </button>
+          </div>
+
+          <input
+            placeholder="搜索物资品名、对应活动或备注…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-1 max-w-sm text-xs px-3 py-2 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white focus:outline-none focus:border-[#27563c]"
+          />
+
+          <div className="flex rounded-lg border border-[#e3ded2] p-0.5 bg-[#f8f7f2] text-xs">
+            <button
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                filter === 'all' ? 'bg-white text-[#27563c] shadow-sm' : 'text-[#5d6e62]'
+              }`}
+              onClick={() => setFilter('all')}
+            >
+              全部 ({items.length})
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                filter === 'pending' ? 'bg-white text-[#d97706] shadow-sm' : 'text-[#5d6e62]'
+              }`}
+              onClick={() => setFilter('pending')}
+            >
+              待准备 ({pending})
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                filter === 'ready' ? 'bg-white text-[#16a34a] shadow-sm' : 'text-[#5d6e62]'
+              }`}
+              onClick={() => setFilter('ready')}
+            >
+              已就绪 ({ready})
+            </button>
+          </div>
+        </div>
+
+        {!canEdit && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex justify-between items-center">
+            <span>
+              {account?.user
+                ? '当前登录账号没有物资备货的修改权限。'
+                : '以管理员账号登录后，可直接在下方勾选物资准备完成状态。'}
+            </span>
+            <a href="/yanxue-calendar" className="text-[#27563c] font-bold hover:underline">
+              前往活动排期日历 →
+            </a>
+          </div>
+        )}
+
+        {/* 物资卡片列表 */}
+        {loading ? (
+          <div className="py-20 text-center text-xs text-[#5d6e62]">正在读取物资清单…</div>
+        ) : visible.length === 0 ? (
+          <div className="py-20 bg-white rounded-2xl border border-dashed border-[#e3ded2] text-center space-y-3">
+            <PackageCheck className="w-10 h-10 mx-auto text-[#8b998e]" />
+            <p className="text-sm font-semibold text-[#1e2c22]">
+              {items.length === 0 ? '本月暂无活动填写物资需求。' : '没有符合当前搜索和筛选条件的物资。'}
+            </p>
+            {canEdit && (
+              <a
+                href="/yanxue-calendar"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#27563c] hover:underline"
+              >
+                返回活动日历添加或编辑物资 →
+              </a>
+            )}
+          </div>
+        ) : (
+          <section className="space-y-4">
+            {visible.map((item) => (
+              <article
+                key={item.name}
+                className="bg-white rounded-2xl border border-[#e3ded2] shadow-sm overflow-hidden"
+              >
+                <header className="p-4 bg-[#fbfaf7] border-b border-[#e3ded2] flex justify-between items-center">
+                  <div>
+                    <h2 className="text-base font-bold text-[#1e2c22]">{item.name}</h2>
+                    {item.unit && (
+                      <small className="text-xs text-[#5d6e62]">计量单位：{item.unit}</small>
+                    )}
+                  </div>
+                  <strong className="text-base font-extrabold text-[#27563c]">
+                    月度总需：{item.total ? item.total + (item.unit ? ' ' + item.unit : '') : item.uses.map((x) => x.qty).join('、')}
+                  </strong>
+                </header>
+
+                <div className="divide-y divide-[#f1eee5]">
+                  {item.uses.map((use) => {
+                    const key = use.eventId + ':' + use.materialIndex;
+                    return (
+                      <div
+                        key={key}
+                        className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#faf9f5] transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <time className="text-xs font-bold text-[#27563c] w-20 flex-shrink-0">
+                            {use.date}
+                          </time>
+                          <strong className="text-xs font-bold text-[#1e2c22] truncate max-w-xs">
+                            {use.eventName}
+                          </strong>
+                        </div>
+
+                        <div className="flex items-center gap-4 flex-1 justify-end">
+                          {canEdit ? (
+                            <div className="flex items-center gap-2 text-xs">
+                              <label className="flex items-center gap-1 text-[#5d6e62]">
+                                <span>数量:</span>
+                                <input
+                                  value={drafts[key]?.qty ?? use.qty}
+                                  disabled={saving === key}
+                                  onChange={(e) =>
+                                    setDrafts((old) => ({
+                                      ...old,
+                                      [key]: { ...old[key], qty: e.target.value },
+                                    }))
+                                  }
+                                  onBlur={() => void commitField(use, 'qty')}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                  }}
+                                  className="w-24 p-1 rounded border border-[#e3ded2] bg-white text-xs"
+                                />
+                              </label>
+                              <label className="flex items-center gap-1 text-[#5d6e62]">
+                                <span>备注:</span>
+                                <input
+                                  value={drafts[key]?.note ?? use.note}
+                                  disabled={saving === key}
+                                  onChange={(e) =>
+                                    setDrafts((old) => ({
+                                      ...old,
+                                      [key]: { ...old[key], note: e.target.value },
+                                    }))
+                                  }
+                                  onBlur={() => void commitField(use, 'note')}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                  }}
+                                  className="w-32 p-1 rounded border border-[#e3ded2] bg-white text-xs"
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-[#5d6e62]">
+                              <span>{use.qty || '未填数量'}</span>
+                              {use.note && <span className="ml-1 text-[#8b998e]">（{use.note}）</span>}
+                            </div>
+                          )}
+
+                          <button
+                            disabled={!canEdit || saving === key}
+                            onClick={() => void updateUse(use, { done: !use.done })}
+                            className={`text-xs px-3 py-1.5 rounded-full font-bold transition-colors ${
+                              use.done
+                                ? 'bg-[#edf5ef] text-[#27563c] border border-[#c9e3d2]'
+                                : 'bg-[#fef7ec] text-[#d97706] border border-[#f7dfbe]'
+                            }`}
+                          >
+                            {saving === key ? '保存中…' : use.done ? '✓ 已就绪' : '○ 待准备'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </main>
+
+      <footer className="global-footer">
+        <div className="global-footer-inner">
+          <div>
+            <strong>江南农耕研学 · 物资准备中心</strong>
+            <span className="ml-3 text-xs text-[#5d6e62]">
+              同名物资自动合并需求，各场活动独立保存状态。
+            </span>
+          </div>
+          <span>© 2026 江南农耕文化研学项目组</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+const materialsStyles = `
+  @media print {
+    .global-topbar, .global-footer, .controls, .account-tools, button {
+      display: none !important;
+    }
+    body {
+      background: white !important;
+    }
+  }
+`;
