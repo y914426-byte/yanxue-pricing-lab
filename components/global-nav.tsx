@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { QQSignIn } from '@/components/qq-sign-in';
-import { User, LogOut, ShieldCheck, ChevronDown, Sparkles } from 'lucide-react';
+import { User, LogOut, ShieldCheck, ChevronDown, Sparkles, UserPlus, Settings } from 'lucide-react';
+import { PermissionManagementModal } from '@/components/permission-management-modal';
 
 export type NavTab = 
   | 'overview' 
@@ -26,6 +27,7 @@ type UserAccount = {
   isQQ?: boolean;
   avatarUrl?: string;
   role?: string;
+  department?: string;
   isAdmin?: boolean;
   canEdit?: boolean;
 };
@@ -33,6 +35,7 @@ type UserAccount = {
 export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: GlobalNavProps) {
   const [account, setAccount] = useState<UserAccount | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showPermModal, setShowPermModal] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const navItems = [
@@ -109,8 +112,21 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
           })}
         </nav>
 
-        <div className="global-topbar-actions flex items-center gap-3">
+        <div className="global-topbar-actions flex items-center gap-2.5">
           {extraRight}
+
+          {/* 管理员专属：快速配置他人编辑权限 */}
+          {account?.isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowPermModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/90 text-[#b45309] border border-amber-200/80 font-bold text-xs shadow-2xs transition-all hover:scale-[1.02]"
+              title="研学后台团队权限管理：给其他人增加编辑功能"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-[#b45309]" />
+              <span>团队权限配置</span>
+            </button>
+          )}
 
           {showDefaultCta && (
             <a
@@ -160,7 +176,7 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
               {/* 用户信息下拉菜单 */}
               {showUserMenu && (
                 <div
-                  className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-stone-200 shadow-xl p-4 space-y-3 animate-in fade-in z-50 text-xs"
+                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-stone-200 shadow-xl p-4 space-y-3 animate-in fade-in z-50 text-xs"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
@@ -193,12 +209,38 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
+                      <span className="text-stone-400">所属部门：</span>
+                      <span className="font-bold text-stone-700">
+                        {account.department || '研学项目组'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
                       <span className="text-stone-400">系统权限：</span>
                       <span className={`font-bold ${account.isAdmin ? 'text-[#b45309]' : 'text-[#27563c]'}`}>
                         {account.isAdmin ? '★ 系统主管理员' : account.canEdit ? '✓ 团队编辑人员' : '只读查看人员'}
                       </span>
                     </div>
                   </div>
+
+                  {/* 管理员专属功能按钮 */}
+                  {account.isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        setShowPermModal(true);
+                      }}
+                      className="w-full py-2.5 px-3 text-left rounded-xl bg-amber-50 hover:bg-amber-100 text-[#b45309] font-bold text-xs border border-amber-200/90 transition-colors flex items-center justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-[#b45309]" />
+                        配置团队成员与编辑权限
+                      </span>
+                      <span className="text-[10px] bg-amber-200/80 text-[#b45309] px-1.5 py-0.5 rounded-md">
+                        管理
+                      </span>
+                    </button>
+                  )}
 
                   <div className="pt-1 flex gap-2">
                     <button
@@ -222,6 +264,12 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
           )}
         </div>
       </div>
+
+      <PermissionManagementModal
+        isOpen={showPermModal}
+        onClose={() => setShowPermModal(false)}
+        onUpdated={fetchAccount}
+      />
     </header>
   );
 }

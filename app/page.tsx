@@ -14,8 +14,11 @@ import {
   MapPin, 
   PlusCircle, 
   Sparkles,
-  BookOpen
+  BookOpen,
+  ShieldCheck,
+  UserCog
 } from 'lucide-react';
+import { PermissionManagementModal } from '@/components/permission-management-modal';
 
 type Event = {
   id: string;
@@ -67,6 +70,8 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showPermModal, setShowPermModal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -74,7 +79,10 @@ export default function Home() {
       .then(async (r) => {
         const d = (await r.json()) as any;
         if (!r.ok) throw new Error(d?.error || '读取日历失败');
-        if (active) setEvents(d?.events || []);
+        if (active) {
+          setEvents(d?.events || []);
+          if (d?.isAdmin) setIsAdmin(true);
+        }
       })
       .catch((e) => {
         if (active) setError(e instanceof Error ? e.message : '日历暂不可用');
@@ -82,6 +90,17 @@ export default function Home() {
       .finally(() => {
         if (active) setLoading(false);
       });
+
+    // 同时读取用户账号权限
+    fetch('/api/account', { cache: 'no-store' })
+      .then(async (r) => {
+        const d = (await r.json()) as any;
+        if (r.ok && d?.user?.isAdmin && active) {
+          setIsAdmin(true);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       active = false;
     };
@@ -140,6 +159,17 @@ export default function Home() {
               >
                 <FileText className="w-4 h-4 text-[#e5c178]" /> 导入新方案
               </a>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setShowPermModal(true)}
+                  className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-[#e5c178]/60 shadow-md transition-all hover:scale-[1.02]"
+                  style={{ color: '#ffffff', backgroundColor: '#b45309' }}
+                  title="为团队成员增加编辑权限"
+                >
+                  <ShieldCheck className="w-4 h-4 text-[#fde68a]" /> 配置团队编辑权限
+                </button>
+              )}
             </div>
           </div>
 
@@ -195,7 +225,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {/* 01 方案库 */}
             <a
               href="/schemes"
@@ -303,6 +333,33 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </a>
+
+            {/* 05 权限管理 */}
+            <div
+              onClick={() => setShowPermModal(true)}
+              className="group p-6 rounded-2xl bg-gradient-to-b from-white to-[#fcfaf7] border border-[#ebdccb] hover:border-[#b45309] shadow-xs hover:shadow-md transition-all flex flex-col justify-between cursor-pointer"
+            >
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-11 h-11 rounded-xl bg-amber-50 text-[#b45309] flex items-center justify-center border border-amber-200/60">
+                    <UserCog className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-bold tracking-wider text-[#b45309]">WORKSPACE 05</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#b45309] transition-colors flex items-center gap-1.5">
+                    团队权限管理
+                  </h3>
+                  <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
+                    给导师与策划人员分配编辑功能，管理活动排期、物资备货与价格库权限。
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#b45309]">
+                <span>{isAdmin ? '管理成员权限' : '查看权限配置'}</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -546,6 +603,11 @@ export default function Home() {
           <span>© 2026 江南农耕文化研学项目组 · All Rights Reserved</span>
         </div>
       </footer>
+
+      <PermissionManagementModal
+        isOpen={showPermModal}
+        onClose={() => setShowPermModal(false)}
+      />
     </div>
   );
 }

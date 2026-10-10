@@ -35,6 +35,7 @@ export async function GET(request: Request) {
         role: roleInfo.role,
         isAdmin: roleInfo.isAdmin,
         canEdit: roleInfo.canEdit,
+        department: roleInfo.department,
       },
       clientId: (env as unknown as Record<string, unknown>).GOOGLE_CLIENT_ID ?? null,
     });

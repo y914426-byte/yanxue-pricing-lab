@@ -7,6 +7,7 @@ export type AuthorizedUser = {
   email: string;
   role: UserRole;
   display_name: string;
+  department?: string;
   added_by: string;
   created_at: string;
 };
@@ -32,9 +33,17 @@ export async function ensurePermissionsSchema(db: ReturnType<typeof getDb>) {
         email TEXT PRIMARY KEY NOT NULL,
         role TEXT NOT NULL DEFAULT 'editor',
         display_name TEXT NOT NULL DEFAULT '',
+        department TEXT NOT NULL DEFAULT '研学项目组',
         added_by TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL
       )`).run();
+
+      // 安全补充 department 字段兼容旧版本表
+      try {
+        await db.prepare(`ALTER TABLE calendar_authorized_users ADD COLUMN department TEXT NOT NULL DEFAULT '研学项目组'`).run();
+      } catch {
+        // 已有该列时忽略错误
+      }
 
       // 2. 团队注册用户名册表 (支持 QQ 注册与 Google 注册成员)
       await db.prepare(`CREATE TABLE IF NOT EXISTS team_registered_users (
@@ -65,13 +74,20 @@ export function isRootAdminEmail(email?: string | null): boolean {
   const normalized = email.trim().toLowerCase();
   
   // 检查环境变量配置 (支持逗号分隔多个邮箱)
-  const configured = (env as unknown as Record<string, unknown>).CALENDAR_ADMIN_EMAIL;
-  if (typeof configured === 'string') {
-    const list = configured.toLowerCase().split(',').map((s) => s.trim());
+  const envObj = env as unknown as Record<string, unknown>;
+  const calendarAdmin = envObj.CALENDAR_ADMIN_EMAIL;
+  if (typeof calendarAdmin === 'string') {
+    const list = calendarAdmin.toLowerCase().split(',').map((s) => s.trim());
     if (list.includes(normalized)) return true;
   }
 
-  // 兼顾默认管理员账号 (无论使用 Google 还是 QQ 登录)
+  const priceAdmins = envObj.PRICE_ADMIN_EMAILS;
+  if (typeof priceAdmins === 'string') {
+    const list = priceAdmins.toLowerCase().split(',').map((s) => s.trim());
+    if (list.includes(normalized)) return true;
+  }
+
+  // 兼顾默认主管理员账号 (无论使用 Google 还是 QQ 登录)
   if (
     normalized === 'y914426@gmail.com' || 
     normalized === 'y914426@qq.com'
@@ -88,23 +104,35 @@ export function isRootAdminEmail(email?: string | null): boolean {
 export async function checkCalendarUserRole(
   db: ReturnType<typeof getDb>,
   userEmail?: string | null
-): Promise<{ canEdit: boolean; isAdmin: boolean; role: UserRole }> {
+): Promise<{ 
+  canEdit: boolean; 
+  isAdmin: boolean; 
+  role: UserRole;
+  department?: string;
+  displayName?: string;
+}> {
   if (!userEmail) {
-    return { canEdit: false, isAdmin: false, role: 'viewer' };
+    return { canEdit: false, isAdmin: false, role: 'viewer', department: '访客', displayName: '' };
   }
   const email = userEmail.trim().toLowerCase();
 
   // 1. 检查是否为主管理员
   if (isRootAdminEmail(email)) {
-    return { canEdit: true, isAdmin: true, role: 'admin' };
+    return { 
+      canEdit: true, 
+      isAdmin: true, 
+      role: 'admin', 
+      department: '研学运营总控', 
+      displayName: '系统主管理员' 
+    };
   }
 
   // 2. 检查数据库已授权用户表
   await ensurePermissionsSchema(db);
   const row = await db
-    .prepare('SELECT role FROM calendar_authorized_users WHERE LOWER(email) = ?')
+    .prepare('SELECT role, display_name, department FROM calendar_authorized_users WHERE LOWER(email) = ?')
     .bind(email)
-    .first<{ role: string }>();
+    .first<{ role: string; display_name?: string; department?: string }>();
 
   if (row) {
     const role = (row.role || 'editor') as UserRole;
@@ -112,8 +140,10 @@ export async function checkCalendarUserRole(
       canEdit: role === 'admin' || role === 'editor',
       isAdmin: role === 'admin',
       role,
+      department: row.department || '研学项目组',
+      displayName: row.display_name || '',
     };
   }
 
-  return { canEdit: false, isAdmin: false, role: 'viewer' };
+  return { canEdit: false, isAdmin: false, role: 'viewer', department: '普通成员', displayName: '' };
 }

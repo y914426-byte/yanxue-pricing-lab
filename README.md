@@ -98,3 +98,15 @@ GitHub main 更新后，Pages 自动重新构建部署；数据库不随构建�
 - 数据存储：Cloudflare D1 的 `learning_calendar_events`
 - 公开用户可查看活动；配置 `CALENDAR_ADMIN_EMAIL` 后，该 Google 账号可新增、编辑活动和勾选物资。
 - 首次发布需执行新增的 `drizzle/0009_learning_calendar.sql`，不要重建已有 D1 数据库。
+
+## 研学后台团队权限与协作者管理
+
+- 管理页面：`/admin/permissions`
+- 全局入口：运营工作台首页“WORKSPACE 05 团队权限配置”卡片、Banner 快捷入口、以及全局顶部导航栏“团队权限配置”弹窗。
+- 权限接口：`/api/calendar-permissions`
+- 权限角色：
+  - **系统主管理员 (admin)**：全权管理全站配置、增减其他成员权限、管理系统价格库、编辑排期日历与方案。
+  - **活动策划 / 研学导师 (editor)**：拥有排期日历编辑、物资备货勾选与方案库协作编辑权限。
+  - **只读人员 (viewer)**：只读浏览排期日历与研学方案。
+- 支持 QQ 邮箱（输入纯 QQ 号快捷一键补全）及 Google 邮箱。管理员分配权限后即刻生效，无需重启服务或修改环境变量。
+- 对应迁移文件：`drizzle/0010_admin_permissions.sql`。
