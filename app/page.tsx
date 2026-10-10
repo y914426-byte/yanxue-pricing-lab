@@ -184,6 +184,8 @@ export default function Home() {
               <span className="inline-block w-2 h-2 rounded-full bg-[#00c978] animate-pulse" />
             </div>
           </div>
+        </section>
+
         {/* 核心工作区卡片 (Family 纸感微边框规范) */}
         <section className="space-y-4">
           <div className="flex justify-between items-end">
