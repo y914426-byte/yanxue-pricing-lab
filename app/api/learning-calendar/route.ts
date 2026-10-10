@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { getDb } from '@/db';
 import { authReply, getGoogleUser, sameOrigin } from '@/lib/google-auth';
+import { checkCalendarUserRole } from '@/lib/calendar-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,15 +51,20 @@ async function handle(request:Request){
     if(method==='GET'){
       const rows=await db.prepare('SELECT * FROM learning_calendar_events ORDER BY event_date ASC, id ASC').all<EventRow>();
       const user=await getGoogleUser(request,getDb);
-      const adminEmail=(env as Record<string,unknown>).CALENDAR_ADMIN_EMAIL;
-      const canEdit=!!user && typeof adminEmail==='string' && adminEmail.trim().toLowerCase()===user.email.toLowerCase();
-      return authReply({events:(rows.results??[]).map(map),canEdit,user:user?{displayName:user.displayName,email:user.email}:null});
+      const roleInfo = await checkCalendarUserRole(db, user?.email);
+      return authReply({
+        events:(rows.results??[]).map(map),
+        canEdit: roleInfo.canEdit,
+        isAdmin: roleInfo.isAdmin,
+        userRole: roleInfo.role,
+        user:user?{displayName:user.displayName,email:user.email}:null
+      });
     }
     if(!sameOrigin(request))return authReply({error:'请求来源无效'},403);
     const user=await getGoogleUser(request,getDb);
-    const adminEmail=(env as Record<string,unknown>).CALENDAR_ADMIN_EMAIL;
-    if(!user || typeof adminEmail!=='string' || adminEmail.trim().toLowerCase()!==user.email.toLowerCase())
-      return authReply({error:'当前 Google 账号没有日历编辑权限。请确认已登录 Cloudflare Pages 中 CALENDAR_ADMIN_EMAIL 对应的管理员邮箱。'},403);
+    const roleInfo = await checkCalendarUserRole(db, user?.email);
+    if(!user || !roleInfo.canEdit)
+      return authReply({error:'当前账号没有排期日历编辑权限。请联系管理员分配权限，或切换至管理员邮箱登录。'},403);
     if(!request.headers.get('content-type')?.startsWith('application/json'))return authReply({error:'请求格式无效'},415);
     const body=await request.json() as Record<string,unknown>;
     const now=new Date().toISOString();

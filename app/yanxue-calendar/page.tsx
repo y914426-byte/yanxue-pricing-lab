@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GoogleSignIn } from '@/components/google-sign-in';
 import { GlobalNav } from '@/components/global-nav';
+import { downloadEventICS, downloadBatchICS } from '@/lib/calendar-ics';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -18,12 +19,18 @@ import {
   Sparkles,
   PackageCheck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bell,
+  Mail,
+  ShieldCheck,
+  UserPlus,
+  Download
 } from 'lucide-react';
 
 type M = { name: string; qty: string; note: string; done: boolean };
 type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
 type A = { user: { displayName: string; email: string } | null; clientId: string | null };
+type PermUser = { email: string; role: string; display_name: string; added_by: string; created_at: string };
 
 const labels: Record<string, string> = {
   confirmed: '已确定',
@@ -67,6 +74,8 @@ export default function Calendar() {
   const [form, setForm] = useState<E>(blank());
   const [editing, setEditing] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
   const [error, setError] = useState('');
   const [account, setAccount] = useState<A | undefined>();
   const [query, setQuery] = useState('');
@@ -75,6 +84,20 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
 
+  // 权限管理弹窗相关状态
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [authorizedUsers, setAuthorizedUsers] = useState<PermUser[]>([]);
+  const [newEmail, setNewEmail] = useState('');
+  const [newRole, setNewRole] = useState<'editor' | 'admin'>('editor');
+  const [newName, setNewName] = useState('');
+  const [permBusy, setPermBusy] = useState(false);
+  const [permMsg, setPermMsg] = useState('');
+
+  // 邮件预约提醒相关状态
+  const [reminderEmail, setReminderEmail] = useState('');
+  const [reminderDays, setReminderDays] = useState(1);
+  const [reminderStatus, setReminderStatus] = useState('');
+
   const load = async () => {
     try {
       const r = await fetch('/api/learning-calendar', { cache: 'no-store' });
@@ -82,6 +105,8 @@ export default function Calendar() {
       if (!r.ok) throw new Error(d.error);
       setEvents(d.events || []);
       setCanEdit(!!d.canEdit);
+      setIsAdmin(!!d.isAdmin);
+      setUserRole(d.userRole || 'viewer');
       setError('');
     } catch (e) {
       const m = e instanceof Error ? e.message : '读取失败';
@@ -90,6 +115,99 @@ export default function Calendar() {
           ? '日历数据表尚未初始化，请先应用 0009_learning_calendar.sql 迁移。'
           : m
       );
+    }
+  };
+
+  const loadPermissions = async () => {
+    try {
+      setPermBusy(true);
+      const r = await fetch('/api/calendar-permissions', { cache: 'no-store' });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setAuthorizedUsers(d.users || []);
+      setPermMsg('');
+    } catch (e) {
+      setPermMsg(e instanceof Error ? e.message : '获取协作者列表失败');
+    } finally {
+      setPermBusy(false);
+    }
+  };
+
+  const addPermissionUser = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      alert('请输入有效的邮箱地址');
+      return;
+    }
+    try {
+      setPermBusy(true);
+      const r = await fetch('/api/calendar-permissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newEmail,
+          role: newRole,
+          display_name: newName,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setNewEmail('');
+      setNewName('');
+      setPermMsg('✓ 权限已成功更新！');
+      await loadPermissions();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '授权添加失败');
+    } finally {
+      setPermBusy(false);
+    }
+  };
+
+  const removePermissionUser = async (email: string) => {
+    if (!confirm(`确定要移除 ${email} 的编辑权限吗？`)) return;
+    try {
+      setPermBusy(true);
+      const r = await fetch(`/api/calendar-permissions?email=${encodeURIComponent(email)}`, {
+        method: 'DELETE',
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      await loadPermissions();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '移除失败');
+    } finally {
+      setPermBusy(false);
+    }
+  };
+
+  const sendEmailReminder = async (event: E) => {
+    const target = reminderEmail.trim() || account?.user?.email || '';
+    if (!target) {
+      alert('请输入接收提醒的邮箱地址');
+      return;
+    }
+    try {
+      setReminderStatus('正在生成预约提醒…');
+      const r = await fetch('/api/calendar-reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: event.id,
+          eventName: event.name,
+          eventDate: event.date,
+          place: event.place,
+          people: event.people,
+          targetEmails: target,
+          remindBeforeDays: reminderDays,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setReminderStatus('✓ 预约提醒已登记，已为您拉起邮件客户端！');
+      if (d.mailtoUrl) {
+        window.location.href = d.mailtoUrl;
+      }
+    } catch (e) {
+      setReminderStatus(e instanceof Error ? e.message : '提醒发送失败');
     }
   };
 
@@ -297,50 +415,84 @@ export default function Calendar() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f7f2] text-[#1e2c22]">
+    <div className="min-h-screen flex flex-col bg-[#faf9f6] text-[#1c1917]">
       <GlobalNav
         active="calendar"
+        hideCta={true}
         extraRight={
-          canEdit ? (
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setShowPermissions(true);
+                  void loadPermissions();
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-sm transition-colors"
+                title="管理团队协作者的编辑与管理权限"
+              >
+                <Users className="w-3.5 h-3.5 text-[#27563c]" />
+                <span>团队权限管理</span>
+              </button>
+            )}
+
             <button
-              onClick={() => {
-                setForm(blank());
-                setEditing(true);
-              }}
-              className="global-btn-cta"
+              onClick={() => downloadBatchICS(monthEvents, `${y}年${m}月-研学排期日历`)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-sm transition-colors"
+              title="一键导出到 iPhone、Mac、Android、Outlook 手机/电脑系统日历"
             >
-              <Plus className="w-4 h-4" /> 新增活动
+              <Download className="w-3.5 h-3.5 text-[#d97706]" />
+              <span>同步系统日历 (.ics)</span>
             </button>
-          ) : undefined
+
+            {canEdit && (
+              <button
+                onClick={() => {
+                  setForm(blank());
+                  setEditing(true);
+                }}
+                className="global-btn-cta"
+              >
+                <Plus className="w-4 h-4" /> 新建活动
+              </button>
+            )}
+          </div>
         }
       />
       <style>{calendarStyles}</style>
 
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 py-8 space-y-6">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-8 py-8 space-y-6">
         {/* 顶部标题区 */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-2 border-b border-[#e3ded2]">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-4 border-b border-stone-200/80">
           <div>
-            <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">
-              OPERATIONS SCHEDULE
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1e2c22] mt-1">
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-emerald-800 mb-1">
+              <span>🌾 研学排期 · 履约协同中心</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
               研学排期日历
             </h1>
-            <p className="text-xs sm:text-sm text-[#5d6e62] mt-1">
-              排期日程 · 团队规模 · 活动流程 · 物资备货追踪
+            <p className="text-xs sm:text-sm text-stone-600 mt-1">
+              全生命周期统筹出团日程、参与规模、物资备货与手机/电脑日历双重提醒
             </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
             {account?.user ? (
-              <span className="text-xs px-3 py-1.5 rounded-lg bg-white border border-[#e3ded2] text-[#5d6e62]">
-                当前登录：<strong className="text-[#1e2c22]">{account.user.email}</strong>
-                {canEdit ? (
-                  <span className="ml-1.5 text-[#27563c] font-bold">（管理员）</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs text-stone-600 shadow-sm">
+                <span>当前登录：<strong className="text-stone-900">{account.user.email}</strong></span>
+                {isAdmin ? (
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/60">
+                    超级管理员
+                  </span>
+                ) : canEdit ? (
+                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
+                    活动策划/编辑员
+                  </span>
                 ) : (
-                  <span className="ml-1.5 text-amber-600 font-bold">（访客只读）</span>
+                  <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200/60">
+                    只读访客
+                  </span>
                 )}
-              </span>
+              </div>
             ) : account?.clientId ? (
               <GoogleSignIn
                 clientId={account.clientId}
@@ -355,7 +507,7 @@ export default function Calendar() {
 
             {account?.user && (
               <button
-                className="text-xs px-3 py-1.5 rounded-lg border border-[#e3ded2] bg-white hover:bg-gray-50 text-[#5d6e62]"
+                className="text-xs px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 shadow-sm transition-colors"
                 onClick={signOut}
               >
                 切换账号
@@ -365,63 +517,70 @@ export default function Calendar() {
         </div>
 
         {error && (
-          <div className="p-3.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{error}</span>
+          <div className="p-4 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button onClick={load} className="underline text-xs hover:text-red-900">重新加载</button>
           </div>
         )}
 
-        {/* 月度统计卡片 */}
+        {/* 月度统计卡片：清爽高雅配色 */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
-            <span className="text-xs text-[#5d6e62]">本月活动场次</span>
-            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
-              {stats.total} <small className="text-xs font-normal text-[#5d6e62]">场</small>
-            </strong>
+          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <span className="text-xs font-medium text-stone-500">本月活动场次</span>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-2xl font-serif font-bold text-stone-900">{stats.total}</span>
+              <span className="text-xs text-stone-500">场</span>
+            </div>
           </div>
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
-            <span className="text-xs text-[#5d6e62]">预计参与总人数</span>
-            <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
-              {stats.people} <small className="text-xs font-normal text-[#5d6e62]">人</small>
-            </strong>
+          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <span className="text-xs font-medium text-stone-500">预计参与总人数</span>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-2xl font-serif font-bold text-[#27563c]">{stats.people.toLocaleString()}</span>
+              <span className="text-xs text-stone-500">人</span>
+            </div>
           </div>
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
-            <span className="text-xs text-[#5d6e62]">已确定活动</span>
-            <strong className="block text-2xl font-extrabold text-[#16a34a] mt-1">
-              {stats.confirmed} <small className="text-xs font-normal text-[#5d6e62]">场</small>
-            </strong>
+          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <span className="text-xs font-medium text-stone-500">已确定活动</span>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-2xl font-serif font-bold text-emerald-700">{stats.confirmed}</span>
+              <span className="text-xs text-stone-500">场</span>
+            </div>
           </div>
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm">
-            <span className="text-xs text-[#5d6e62]">待跟进预约</span>
-            <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
-              {stats.pending} <small className="text-xs font-normal text-[#5d6e62]">场</small>
-            </strong>
+          <div className="p-5 rounded-xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <span className="text-xs font-medium text-stone-500">待跟进预约</span>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-2xl font-serif font-bold text-[#d97706]">{stats.pending}</span>
+              <span className="text-xs text-stone-500">场</span>
+            </div>
           </div>
         </section>
 
         {/* 工具栏 (月份切换、搜索、状态筛选、视图切换) */}
-        <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div className="p-4 rounded-xl bg-white border border-stone-200/80 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button
               aria-label="上个月"
               onClick={() => shift(-1)}
-              className="w-8 h-8 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white flex items-center justify-center text-sm"
+              className="w-8 h-8 rounded-lg border border-stone-200 bg-stone-50 hover:bg-white flex items-center justify-center text-sm transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4 text-stone-600" />
             </button>
-            <strong className="text-lg font-bold text-[#1e2c22] px-2">
+            <strong className="text-base font-serif font-bold text-stone-900 px-2 min-w-[110px] text-center">
               {y} 年 {m} 月
             </strong>
             <button
               aria-label="下个月"
               onClick={() => shift(1)}
-              className="w-8 h-8 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white flex items-center justify-center text-sm"
+              className="w-8 h-8 rounded-lg border border-stone-200 bg-stone-50 hover:bg-white flex items-center justify-center text-sm transition-colors"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 text-stone-600" />
             </button>
             <button
               onClick={() => setMonth(new Date().toISOString().slice(0, 7))}
-              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c]"
+              className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-white text-emerald-800 transition-colors"
             >
               回到本月
             </button>
@@ -432,12 +591,12 @@ export default function Calendar() {
               placeholder="搜索活动名称、场地、流程或物资…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 text-xs px-3 py-2 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white focus:outline-none focus:border-[#27563c]"
+              className="flex-1 text-xs px-3 py-2 rounded-lg border border-stone-200 bg-stone-50/70 focus:bg-white focus:outline-none focus:border-emerald-700 transition-colors"
             />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs px-3 py-2 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white text-[#1e2c22]"
+              className="text-xs px-3 py-2 rounded-lg border border-stone-200 bg-stone-50/70 focus:bg-white text-stone-900"
             >
               <option value="all">全部状态</option>
               <option value="followup">待跟进</option>
@@ -450,10 +609,10 @@ export default function Calendar() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-[#e3ded2] p-0.5 bg-[#f8f7f2] text-xs">
+            <div className="flex rounded-lg border border-stone-200 p-0.5 bg-stone-100 text-xs">
               <button
                 className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                  view === 'calendar' ? 'bg-white text-[#27563c] shadow-sm' : 'text-[#5d6e62]'
+                  view === 'calendar' ? 'bg-white text-emerald-900 shadow-sm' : 'text-stone-600'
                 }`}
                 onClick={() => setView('calendar')}
               >
@@ -461,24 +620,13 @@ export default function Calendar() {
               </button>
               <button
                 className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                  view === 'list' ? 'bg-white text-[#27563c] shadow-sm' : 'text-[#5d6e62]'
+                  view === 'list' ? 'bg-white text-emerald-900 shadow-sm' : 'text-stone-600'
                 }`}
                 onClick={() => setView('list')}
               >
                 列表视图
               </button>
             </div>
-            {canEdit && (
-              <button
-                onClick={() => {
-                  setForm(blank());
-                  setEditing(true);
-                }}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#27563c] text-white hover:bg-[#1e4530] flex items-center gap-1 shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" /> 新建
-              </button>
-            )}
           </div>
         </div>
 
@@ -794,12 +942,79 @@ export default function Calendar() {
                 </div>
               )}
 
+              {/* 活动开始预约提醒与系统日历同步 */}
+              <div className="space-y-3 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                    <Bell className="w-4 h-4 text-[#d97706]" /> 活动预约出团提醒 & 系统日历同步
+                  </h3>
+                  <span className="text-[11px] text-amber-800 font-medium">支持 iPhone/Mac/Windows 日历闹钟与邮件通告</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* 手机/电脑日历同步 */}
+                  <div className="p-3 bg-white rounded-lg border border-amber-200/60 space-y-2">
+                    <span className="text-xs font-bold text-stone-900 block flex items-center gap-1">
+                      <span>📱</span> 手机 / 电脑系统日历 (.ics)
+                    </span>
+                    <p className="text-[11px] text-stone-500 leading-relaxed">
+                      一键生成标准 .ics 文件，苹果 iOS、Mac、安卓系统日历、Outlook 均可原生导入，已内置出团前 1 天与 2 小时响铃提醒。
+                    </p>
+                    <button
+                      onClick={() => downloadEventICS(current)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold shadow-sm transition-colors"
+                    >
+                      <CalendarIcon className="w-3.5 h-3.5 text-[#e5c178]" /> 添加到系统日历 (.ics)
+                    </button>
+                  </div>
+
+                  {/* 邮箱出团提醒 */}
+                  <div className="p-3 bg-white rounded-lg border border-amber-200/60 space-y-2">
+                    <span className="text-xs font-bold text-stone-900 block flex items-center gap-1">
+                      <span>✉️</span> 预约出团邮件通知
+                    </span>
+                    <div className="space-y-1.5">
+                      <input
+                        placeholder="接收邮箱（如带队导师/基地联系人）"
+                        value={reminderEmail}
+                        onChange={(e) => setReminderEmail(e.target.value)}
+                        className="w-full text-xs p-2 rounded border border-stone-200 bg-stone-50 focus:bg-white"
+                      />
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={reminderDays}
+                          onChange={(e) => setReminderDays(Number(e.target.value))}
+                          className="text-xs p-1.5 rounded border border-stone-200 bg-stone-50 text-stone-800 font-medium"
+                        >
+                          <option value={1}>提前 1 天提醒</option>
+                          <option value={3}>提前 3 天提醒</option>
+                          <option value={0}>当天早晨提醒</option>
+                        </select>
+                        <button
+                          onClick={() => void sendEmailReminder(current)}
+                          className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-semibold shadow-sm transition-colors"
+                        >
+                          <Mail className="w-3 h-3" /> 发送邮件提醒
+                        </button>
+                      </div>
+                    </div>
+                    {reminderStatus && (
+                      <p className="text-[11px] text-emerald-800 font-medium pt-0.5">{reminderStatus}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* 动作区 */}
               <div className="pt-4 border-t border-[#f1eee5] flex flex-wrap justify-between items-center gap-3">
                 <div className="flex gap-2">
                   <button
                     onClick={() => sendToPricing(current)}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-white"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-white shadow-sm"
+                  >
+                    <Calculator className="w-3.5 h-3.5" /> 带入定价台测算
+                  </button>
+                </div>
                   >
                     <Calculator className="w-3.5 h-3.5" /> 带入定价台测算
                   </button>
@@ -1069,6 +1284,154 @@ export default function Calendar() {
                   className="text-xs font-bold px-5 py-2 rounded-xl bg-[#27563c] hover:bg-[#1e4530] text-white shadow-sm"
                 >
                   {saving ? '保存中…' : '保存活动'}
+                </button>
+              </div>
+            </article>
+          </div>
+        )}
+
+        {/* 协作者权限管理弹窗 */}
+        {showPermissions && (
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowPermissions(false)}
+          >
+            <article
+              className="bg-white rounded-2xl border border-stone-200 w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-2xl"
+                onClick={() => setShowPermissions(false)}
+              >
+                ×
+              </button>
+
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  <span>TEAM ACCESS CONTROL</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
+                  团队协作者与编辑权限管理
+                </h2>
+                <p className="text-xs text-stone-500 mt-1">
+                  方便您随时给带队导师、研学策划或其他运营人员增加排期日历与物资的编辑权限，无需改动云端配置。
+                </p>
+              </div>
+
+              {/* 授权新成员卡片 */}
+              <div className="p-4 rounded-xl bg-stone-50/80 border border-stone-200/80 space-y-3">
+                <h3 className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5 text-emerald-800" /> 授权新协作者账户
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+                  <input
+                    placeholder="成员 Google 邮箱 (必填，如 mentor@gmail.com)"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="sm:col-span-6 p-2 rounded-lg border border-stone-200 bg-white focus:outline-none focus:border-emerald-700"
+                  />
+                  <input
+                    placeholder="导师姓名/称呼 (选填)"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="sm:col-span-3 p-2 rounded-lg border border-stone-200 bg-white focus:outline-none focus:border-emerald-700"
+                  />
+                  <select
+                    value={newRole}
+                    onChange={(e) => setNewRole(e.target.value as 'editor' | 'admin')}
+                    className="sm:col-span-3 p-2 rounded-lg border border-stone-200 bg-white font-medium focus:outline-none focus:border-emerald-700 text-stone-800"
+                  >
+                    <option value="editor">活动策划/编辑员</option>
+                    <option value="admin">系统管理员</option>
+                  </select>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+                  <span className="text-[11px] text-stone-500">
+                    💡 提示：该成员使用所填邮箱登录 Google 后，将自动获得日历编辑与物资标记权限。
+                  </span>
+                  <button
+                    disabled={permBusy}
+                    onClick={addPermissionUser}
+                    className="px-4 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
+                  >
+                    {permBusy ? '正在处理…' : '＋ 确认并赋予权限'}
+                  </button>
+                </div>
+              </div>
+
+              {permMsg && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center justify-between">
+                  <span>{permMsg}</span>
+                </div>
+              )}
+
+              {/* 已授权成员列表 */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                    已授权的协作者名单 ({authorizedUsers.length})
+                  </h3>
+                  <button
+                    onClick={loadPermissions}
+                    disabled={permBusy}
+                    className="text-xs text-emerald-800 hover:underline"
+                  >
+                    刷新名单
+                  </button>
+                </div>
+
+                <div className="divide-y divide-stone-100 border border-stone-200 rounded-xl overflow-hidden bg-white shadow-inner">
+                  {authorizedUsers.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-stone-400">
+                      暂无添加的额外协作者（当前仅主管理员拥有编辑权限）。在上方输入邮箱即可一键授权。
+                    </div>
+                  ) : (
+                    authorizedUsers.map((u) => (
+                      <div
+                        key={u.email}
+                        className="p-3.5 flex items-center justify-between gap-3 text-xs hover:bg-stone-50/80 transition-colors"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <strong className="text-stone-900 font-medium">{u.email}</strong>
+                            {u.display_name && (
+                              <span className="text-stone-500 text-[11px]">（{u.display_name}）</span>
+                            )}
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                u.role === 'admin'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}
+                            >
+                              {u.role === 'admin' ? '管理员' : '策划编辑'}
+                            </span>
+                          </div>
+                          <small className="text-stone-400 block mt-0.5 text-[11px]">
+                            授权时间：{new Date(u.created_at).toLocaleDateString('zh-CN')} · 授权人：{u.added_by || '管理员'}
+                          </small>
+                        </div>
+                        <button
+                          disabled={permBusy}
+                          onClick={() => void removePermissionUser(u.email)}
+                          className="text-xs text-stone-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                        >
+                          移除权限
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2 text-right">
+                <button
+                  onClick={() => setShowPermissions(false)}
+                  className="px-4 py-2 rounded-xl border border-stone-200 text-stone-700 hover:bg-stone-50 text-xs font-medium"
+                >
+                  完成并关闭
                 </button>
               </div>
             </article>

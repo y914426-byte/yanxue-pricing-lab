@@ -15,9 +15,10 @@ export type NavTab =
 interface GlobalNavProps {
   active?: NavTab;
   extraRight?: React.ReactNode;
+  hideCta?: boolean;
 }
 
-export function GlobalNav({ active = 'overview', extraRight }: GlobalNavProps) {
+export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: GlobalNavProps) {
   const navItems = [
     { key: 'overview', label: '运营总览', href: '/' },
     { key: 'pricing', label: '研学定价台', href: '/pricing' },
@@ -28,6 +29,9 @@ export function GlobalNav({ active = 'overview', extraRight }: GlobalNavProps) {
     { key: 'learning', label: '成本知识库', href: '/learning' },
     { key: 'prices', label: '价格数据库', href: '/prices' },
   ];
+
+  // 如果在日历页面，为了避免与页面自身的“新建活动”冲突，默认不重复展示通用新建按钮
+  const showDefaultCta = !hideCta && active !== 'calendar';
 
   return (
     <header className="global-topbar">
@@ -57,13 +61,15 @@ export function GlobalNav({ active = 'overview', extraRight }: GlobalNavProps) {
 
         <div className="global-topbar-actions">
           {extraRight}
-          <a
-            className="global-btn-cta"
-            href="/yanxue-calendar?action=new"
-            title="排期并安排新活动"
-          >
-            <span>＋</span> 新建活动
-          </a>
+          {showDefaultCta && (
+            <a
+              className="global-btn-cta"
+              href="/yanxue-calendar?action=new"
+              title="排期并安排新活动"
+            >
+              <span>＋</span> 排期新活动
+            </a>
+          )}
         </div>
       </div>
     </header>

@@ -125,20 +125,23 @@ export default function Home() {
               <a
                 href="/pricing"
                 className="inline-flex items-center gap-2 bg-[#d97706] hover:bg-[#b45309] text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-colors"
+                style={{ color: '#ffffff', backgroundColor: '#d97706' }}
               >
-                <Calculator className="w-4 h-4" /> 开始成本测算
+                <Calculator className="w-4 h-4 text-white" /> 开始成本测算
               </a>
               <a
                 href="/yanxue-calendar"
-                className="inline-flex items-center gap-2 bg-white text-[#27563c] hover:bg-[#edf5ef] font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-colors"
+                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/30 shadow-md transition-colors"
+                style={{ color: '#ffffff', backgroundColor: '#183f28' }}
               >
-                <CalendarIcon className="w-4 h-4" /> 查看活动日历
+                <CalendarIcon className="w-4 h-4 text-[#e5c178]" /> 查看排期日历 & 提醒
               </a>
               <a
                 href="/scheme-import"
-                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-xl backdrop-blur transition-colors"
+                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/25 transition-colors"
+                style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
               >
-                <FileText className="w-4 h-4" /> 导入新方案
+                <FileText className="w-4 h-4 text-[#e5c178]" /> 导入新方案
               </a>
             </div>
           </div>
