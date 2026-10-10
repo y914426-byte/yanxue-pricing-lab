@@ -15,10 +15,8 @@ import {
   PlusCircle, 
   Sparkles,
   BookOpen,
-  ShieldCheck,
-  UserCog
+  ShieldCheck
 } from 'lucide-react';
-import { PermissionManagementModal } from '@/components/permission-management-modal';
 
 type Event = {
   id: string;
@@ -70,8 +68,6 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showPermModal, setShowPermModal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -81,7 +77,6 @@ export default function Home() {
         if (!r.ok) throw new Error(d?.error || '读取日历失败');
         if (active) {
           setEvents(d?.events || []);
-          if (d?.isAdmin) setIsAdmin(true);
         }
       })
       .catch((e) => {
@@ -90,16 +85,6 @@ export default function Home() {
       .finally(() => {
         if (active) setLoading(false);
       });
-
-    // 同时读取用户账号权限
-    fetch('/api/account', { cache: 'no-store' })
-      .then(async (r) => {
-        const d = (await r.json()) as any;
-        if (r.ok && d?.user?.isAdmin && active) {
-          setIsAdmin(true);
-        }
-      })
-      .catch(() => {});
 
     return () => {
       active = false;
@@ -120,56 +105,45 @@ export default function Home() {
     .slice(0, 5);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f7f2] text-[#1e2c22]">
+    <div className="min-h-screen flex flex-col bg-[#f6f8f6] text-[#18281e]">
       <GlobalNav active="overview" />
 
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 py-8 space-y-10">
-        {/* Banner Hero - 聚焦核心业务信息与清晰操作 */}
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#27563c] via-[#2f6346] to-[#1e4530] text-white p-8 sm:p-10 shadow-xl shadow-[#27563c]/10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+        {/* Banner Hero - 清爽通透的现代研学工作台横幅 */}
+        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a6d4b] via-[#337b56] to-[#1f563b] text-white p-8 sm:p-10 shadow-lg shadow-[#2a6d4b]/12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="relative z-10 max-w-2xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-white/95 text-xs font-semibold tracking-wider uppercase border border-white/20">
-              <Sparkles className="w-3.5 h-3.5 text-[#e5c178]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#f6d788]" />
               江南农耕文化园 · 研学数字化运营平台
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
               研学运营工作台
             </h1>
-            <p className="text-white/85 text-sm sm:text-base leading-relaxed">
+            <p className="text-white/90 text-sm sm:text-base leading-relaxed">
               覆盖方案策划、精准测算、排期日历与物资备货四大关键环节。让每一场农耕研学活动有据可依、高效协同。
             </p>
             <div className="pt-2 flex flex-wrap gap-3">
               <a
                 href="/pricing"
-                className="inline-flex items-center gap-2 bg-[#d97706] hover:bg-[#b45309] text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-[1.02]"
-                style={{ color: '#ffffff', backgroundColor: '#d97706' }}
+                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-[1.02]"
+                style={{ color: '#ffffff', backgroundColor: '#c4791d' }}
               >
                 <Calculator className="w-4 h-4 text-white" /> 开始成本测算
               </a>
               <a
                 href="/yanxue-calendar"
-                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/30 shadow-md transition-all hover:scale-[1.02] hover:bg-[#204e33]"
-                style={{ color: '#ffffff', backgroundColor: '#183f28' }}
+                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/30 shadow-sm transition-all hover:scale-[1.02] hover:bg-white/20"
+                style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.16)' }}
               >
-                <CalendarIcon className="w-4 h-4 text-[#e5c178]" /> 查看排期日历 & 提醒
+                <CalendarIcon className="w-4 h-4 text-[#f6d788]" /> 查看排期日历 & 提醒
               </a>
               <a
                 href="/scheme-import"
                 className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-white/25 transition-all hover:scale-[1.02] hover:bg-white/20"
                 style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
               >
-                <FileText className="w-4 h-4 text-[#e5c178]" /> 导入新方案
+                <FileText className="w-4 h-4 text-[#f6d788]" /> 导入新方案
               </a>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setShowPermModal(true)}
-                  className="inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-[#e5c178]/60 shadow-md transition-all hover:scale-[1.02]"
-                  style={{ color: '#ffffff', backgroundColor: '#b45309' }}
-                  title="为团队成员增加编辑权限"
-                >
-                  <ShieldCheck className="w-4 h-4 text-[#fde68a]" /> 配置团队编辑权限
-                </button>
-              )}
             </div>
           </div>
 
@@ -225,21 +199,21 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* 01 方案库 */}
             <a
               href="/schemes"
-              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e0e9e3] hover:border-[#2b6c4b] shadow-xs hover:shadow-[0_8px_24px_rgba(43,108,75,0.08)] transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-11 h-11 rounded-xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#eef6f1] text-[#2b6c4b] flex items-center justify-center">
                     <BookOpen className="w-5 h-5" />
                   </div>
                   <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 01</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#2b6c4b] transition-colors">
                     研学方案库
                   </h3>
                   <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
@@ -247,7 +221,7 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+              <div className="mt-6 pt-4 border-t border-[#eaf1ec] flex items-center justify-between text-xs font-bold text-[#2b6c4b]">
                 <span>进入方案库</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -256,17 +230,17 @@ export default function Home() {
             {/* 02 定价台 */}
             <a
               href="/pricing"
-              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e0e9e3] hover:border-[#2b6c4b] shadow-xs hover:shadow-[0_8px_24px_rgba(43,108,75,0.08)] transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-11 h-11 rounded-xl bg-[#fef7ec] text-[#d97706] flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#fef7ee] text-[#d97706] flex items-center justify-center">
                     <Calculator className="w-5 h-5" />
                   </div>
                   <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 02</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#2b6c4b] transition-colors">
                     研学定价台
                   </h3>
                   <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
@@ -274,7 +248,7 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+              <div className="mt-6 pt-4 border-t border-[#eaf1ec] flex items-center justify-between text-xs font-bold text-[#2b6c4b]">
                 <span>开始定价测算</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -283,17 +257,17 @@ export default function Home() {
             {/* 03 日历台 */}
             <a
               href="/yanxue-calendar"
-              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e0e9e3] hover:border-[#2b6c4b] shadow-xs hover:shadow-[0_8px_24px_rgba(43,108,75,0.08)] transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-11 h-11 rounded-xl bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#eef6f1] text-[#2b6c4b] flex items-center justify-center">
                     <CalendarIcon className="w-5 h-5" />
                   </div>
                   <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 03</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#2b6c4b] transition-colors">
                     活动排期日历
                   </h3>
                   <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
@@ -301,7 +275,7 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+              <div className="mt-6 pt-4 border-t border-[#eaf1ec] flex items-center justify-between text-xs font-bold text-[#2b6c4b]">
                 <span>查看排期日历</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -310,17 +284,17 @@ export default function Home() {
             {/* 04 物资中心 */}
             <a
               href="/yanxue-calendar/materials"
-              className="group p-6 rounded-2xl bg-white border border-[#e3ded2] hover:border-[#27563c] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-white border border-[#e0e9e3] hover:border-[#2b6c4b] shadow-xs hover:shadow-[0_8px_24px_rgba(43,108,75,0.08)] transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="w-11 h-11 rounded-xl bg-[#f0f7f3] text-[#16a34a] flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-xl bg-[#edf7f1] text-[#16a34a] flex items-center justify-center">
                     <PackageCheck className="w-5 h-5" />
                   </div>
                   <span className="text-[11px] font-bold tracking-wider text-[#8b998e]">WORKSPACE 04</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#27563c] transition-colors">
+                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#2b6c4b] transition-colors">
                     物资准备中心
                   </h3>
                   <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
@@ -328,76 +302,49 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#27563c]">
+              <div className="mt-6 pt-4 border-t border-[#eaf1ec] flex items-center justify-between text-xs font-bold text-[#2b6c4b]">
                 <span>管理备货物资</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </a>
-
-            {/* 05 权限管理 */}
-            <div
-              onClick={() => setShowPermModal(true)}
-              className="group p-6 rounded-2xl bg-gradient-to-b from-white to-[#fcfaf7] border border-[#ebdccb] hover:border-[#b45309] shadow-xs hover:shadow-md transition-all flex flex-col justify-between cursor-pointer"
-            >
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="w-11 h-11 rounded-xl bg-amber-50 text-[#b45309] flex items-center justify-center border border-amber-200/60">
-                    <UserCog className="w-5 h-5" />
-                  </div>
-                  <span className="text-[11px] font-bold tracking-wider text-[#b45309]">WORKSPACE 05</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-[#1e2c22] group-hover:text-[#b45309] transition-colors flex items-center gap-1.5">
-                    团队权限管理
-                  </h3>
-                  <p className="text-xs text-[#5d6e62] mt-2 leading-relaxed">
-                    给导师与策划人员分配编辑功能，管理活动排期、物资备货与价格库权限。
-                  </p>
-                </div>
-              </div>
-              <div className="mt-6 pt-4 border-t border-[#f1eee5] flex items-center justify-between text-xs font-bold text-[#b45309]">
-                <span>{isAdmin ? '管理成员权限' : '查看权限配置'}</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
           </div>
         </section>
 
         {/* 运营概览与近期活动 */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 指标看板 */}
-          <div className="lg:col-span-1 p-6 rounded-2xl bg-white border border-[#e3ded2] shadow-sm space-y-6">
+          <div className="lg:col-span-1 p-6 rounded-2xl bg-white border border-[#e0e9e3] shadow-xs space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">THIS MONTH</span>
                 <h3 className="text-xl font-bold text-[#1e2c22]">本月运营概览</h3>
               </div>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-[#edf5ef] text-[#27563c] font-semibold border border-[#c9e3d2]">
+              <span className="text-xs px-2.5 py-1 rounded-full bg-[#eef6f1] text-[#2b6c4b] font-semibold border border-[#c3ded0]">
                 {month}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3.5">
-              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+              <div className="p-3.5 rounded-xl bg-[#f8faf8] border border-[#e0e9e3]">
                 <div className="flex items-center justify-between text-[#5d6e62] mb-1">
                   <span className="text-xs">本月活动</span>
-                  <CalendarIcon className="w-4 h-4 text-[#27563c]" />
+                  <CalendarIcon className="w-4 h-4 text-[#2b6c4b]" />
                 </div>
                 <strong className="block text-2xl font-extrabold text-[#1e2c22]">
                   {loading ? '—' : monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
                 </strong>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+              <div className="p-3.5 rounded-xl bg-[#f8faf8] border border-[#e0e9e3]">
                 <div className="flex items-center justify-between text-[#5d6e62] mb-1">
                   <span className="text-xs">预计参与</span>
-                  <Users className="w-4 h-4 text-[#27563c]" />
+                  <Users className="w-4 h-4 text-[#2b6c4b]" />
                 </div>
-                <strong className="block text-2xl font-extrabold text-[#27563c]">
+                <strong className="block text-2xl font-extrabold text-[#2b6c4b]">
                   {loading ? '—' : monthEvents.reduce((n, e) => n + Number(e.people || 0), 0)}{' '}
                   <small className="text-xs font-normal text-[#5d6e62]">人</small>
                 </strong>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+              <div className="p-3.5 rounded-xl bg-[#f8faf8] border border-[#e0e9e3]">
                 <div className="flex items-center justify-between text-[#5d6e62] mb-1">
                   <span className="text-xs">待跟进确认</span>
                   <Clock className="w-4 h-4 text-[#d97706]" />
@@ -406,7 +353,7 @@ export default function Home() {
                   {loading ? '—' : followups.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
                 </strong>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#f8f7f2] border border-[#e3ded2]">
+              <div className="p-3.5 rounded-xl bg-[#f8faf8] border border-[#e0e9e3]">
                 <div className="flex items-center justify-between text-[#5d6e62] mb-1">
                   <span className="text-xs">待准备物资</span>
                   <PackageCheck className="w-4 h-4 text-[#b45309]" />
@@ -417,10 +364,10 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#f1eee5]">
+            <div className="pt-2 border-t border-[#eaf1ec]">
               <a
                 href="/yanxue-calendar/materials"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#27563c] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2b6c4b] hover:underline"
               >
                 前往物资中心核对清单 <ArrowRight className="w-3.5 h-3.5" />
               </a>
@@ -428,7 +375,7 @@ export default function Home() {
           </div>
 
           {/* 近期活动动态 */}
-          <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-[#e3ded2] shadow-sm flex flex-col justify-between">
+          <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-[#e0e9e3] shadow-xs flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -437,7 +384,7 @@ export default function Home() {
                 </div>
                 <a
                   href="/yanxue-calendar"
-                  className="text-xs font-bold text-[#27563c] hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-bold text-[#2b6c4b] hover:underline inline-flex items-center gap-1"
                 >
                   查看完整日历 <ArrowRight className="w-3.5 h-3.5" />
                 </a>
@@ -453,7 +400,7 @@ export default function Home() {
                 <div className="py-12 text-center text-xs text-[#5d6e62]">正在同步活动数据…</div>
               ) : upcoming.length === 0 ? (
                 <div className="py-10 text-center space-y-3">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-[#edf5ef] text-[#27563c] flex items-center justify-center">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-[#eef6f1] text-[#2b6c4b] flex items-center justify-center">
                     <CalendarIcon className="w-6 h-6" />
                   </div>
                   <p className="text-sm font-semibold text-[#1e2c22]">近期暂无待举办活动</p>
@@ -462,27 +409,27 @@ export default function Home() {
                   </p>
                   <a
                     href="/yanxue-calendar"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-[#27563c] text-white"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-[#2b6c4b] text-white hover:bg-[#22573c] transition-colors"
                   >
                     ＋ 立即安排活动
                   </a>
                 </div>
               ) : (
-                <div className="divide-y divide-[#f1eee5]">
+                <div className="divide-y divide-[#eaf1ec]">
                   {upcoming.map((e) => (
                     <a
                       key={e.id}
                       href={`/yanxue-calendar`}
-                      className="group py-3.5 flex items-center justify-between gap-4 hover:bg-[#faf9f5] px-2 -mx-2 rounded-lg transition-colors"
+                      className="group py-3.5 flex items-center justify-between gap-4 hover:bg-[#f8faf8] px-2 -mx-2 rounded-lg transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-12 text-center flex-shrink-0">
-                          <span className="block text-xs font-bold text-[#27563c]">
+                          <span className="block text-xs font-bold text-[#2b6c4b]">
                             {e.date.slice(5).replace('-', '/')}
                           </span>
                         </div>
                         <div className="min-w-0">
-                          <strong className="block text-sm font-bold text-[#1e2c22] truncate group-hover:text-[#27563c] transition-colors">
+                          <strong className="block text-sm font-bold text-[#1e2c22] truncate group-hover:text-[#2b6c4b] transition-colors">
                             {e.name}
                           </strong>
                           <div className="flex items-center gap-3 text-xs text-[#5d6e62] mt-0.5">
@@ -500,9 +447,9 @@ export default function Home() {
                         <span
                           className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                             e.status === 'confirmed'
-                              ? 'bg-[#edf5ef] text-[#27563c]'
+                              ? 'bg-[#eef6f1] text-[#2b6c4b]'
                               : e.status === 'pending'
-                              ? 'bg-[#fef7ec] text-[#d97706]'
+                              ? 'bg-[#fef7ee] text-[#d97706]'
                               : e.status === 'booking'
                               ? 'bg-[#eff6ff] text-[#2563eb]'
                               : 'bg-gray-100 text-gray-700'
@@ -510,7 +457,7 @@ export default function Home() {
                         >
                           {statusText[e.status] || e.status}
                         </span>
-                        <ArrowRight className="w-4 h-4 text-[#8b998e] group-hover:text-[#27563c] group-hover:translate-x-0.5 transition-all" />
+                        <ArrowRight className="w-4 h-4 text-[#8b998e] group-hover:text-[#2b6c4b] group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </a>
                   ))}
@@ -518,9 +465,9 @@ export default function Home() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-[#f1eee5] flex justify-between items-center text-xs text-[#5d6e62]">
+            <div className="pt-4 border-t border-[#eaf1ec] flex justify-between items-center text-xs text-[#5d6e62]">
               <span>点击活动可查看流程与物资准备详情</span>
-              <a href="/yanxue-calendar" className="text-[#27563c] font-semibold hover:underline">
+              <a href="/yanxue-calendar" className="text-[#2b6c4b] font-semibold hover:underline">
                 ＋ 新增排期
               </a>
             </div>
@@ -537,7 +484,7 @@ export default function Home() {
             </div>
             <a
               href="/schemes"
-              className="text-xs font-bold text-[#27563c] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-bold text-[#2b6c4b] hover:underline inline-flex items-center gap-1"
             >
               查看全部方案 <ArrowRight className="w-3.5 h-3.5" />
             </a>
@@ -547,11 +494,11 @@ export default function Home() {
             {featuredSchemes.map((scheme, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-2xl bg-white border border-[#e3ded2] shadow-sm flex flex-col justify-between space-y-5"
+                className="p-6 rounded-2xl bg-white border border-[#e0e9e3] shadow-xs flex flex-col justify-between space-y-5 hover:border-[#2b6c4b] transition-all"
               >
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-[#edf5ef] text-[#27563c] font-semibold">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-[#eef6f1] text-[#2b6c4b] font-semibold">
                       {scheme.badge}
                     </span>
                     <span className="text-xs font-bold text-[#d97706]">{scheme.targetPrice}</span>
@@ -561,27 +508,27 @@ export default function Home() {
                     <p>🎯 适合对象：{scheme.grade}</p>
                     <p>⏱ 活动时长：{scheme.duration}</p>
                   </div>
-                  <div className="pt-2 border-t border-[#f1eee5] space-y-1.5">
+                  <div className="pt-2 border-t border-[#eaf1ec] space-y-1.5">
                     <span className="text-[11px] font-bold text-[#8b998e]">核心研学亮点：</span>
                     {scheme.highlights.map((h, i) => (
                       <div key={i} className="flex items-center gap-2 text-xs text-[#1e2c22]">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#27563c] flex-shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#2b6c4b] flex-shrink-0" />
                         <span>{h}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-[#f1eee5] flex gap-2">
+                <div className="pt-3 border-t border-[#eaf1ec] flex gap-2">
                   <a
                     href={`/pricing`}
-                    className="flex-1 py-2 text-center text-xs font-bold rounded-lg bg-[#edf5ef] text-[#27563c] hover:bg-[#27563c] hover:text-white transition-colors"
+                    className="flex-1 py-2 text-center text-xs font-bold rounded-lg bg-[#eef6f1] text-[#2b6c4b] hover:bg-[#2b6c4b] hover:text-white transition-colors"
                   >
                     按此方案定价
                   </a>
                   <a
                     href={`/yanxue-calendar`}
-                    className="py-2 px-3 text-xs font-bold rounded-lg border border-[#e3ded2] hover:bg-[#f8f7f2] text-[#1e2c22] transition-colors"
+                    className="py-2 px-3 text-xs font-bold rounded-lg border border-[#e0e9e3] hover:bg-[#f8faf8] text-[#1e2c22] transition-colors"
                   >
                     排期
                   </a>
@@ -603,11 +550,6 @@ export default function Home() {
           <span>© 2026 江南农耕文化研学项目组 · All Rights Reserved</span>
         </div>
       </footer>
-
-      <PermissionManagementModal
-        isOpen={showPermModal}
-        onClose={() => setShowPermModal(false)}
-      />
     </div>
   );
 }

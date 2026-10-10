@@ -1,8 +1,18 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { QQSignIn } from '@/components/qq-sign-in';
-import { User, LogOut, ShieldCheck, ChevronDown, Sparkles, UserPlus, Settings } from 'lucide-react';
+import { 
+  User, 
+  LogOut, 
+  ShieldCheck, 
+  ChevronDown, 
+  Sparkles, 
+  UserPlus, 
+  Settings,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { PermissionManagementModal } from '@/components/permission-management-modal';
 
 export type NavTab = 
@@ -38,6 +48,10 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
   const [showPermModal, setShowPermModal] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const navRef = useRef<HTMLElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const navItems = [
     { key: 'overview', label: '运营总览', href: '/' },
     { key: 'pricing', label: '研学定价台', href: '/pricing' },
@@ -48,6 +62,28 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
     { key: 'learning', label: '成本知识库', href: '/learning' },
     { key: 'prices', label: '价格数据库', href: '/prices' },
   ];
+
+  const checkScroll = () => {
+    if (navRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = navRef.current;
+      setCanScrollLeft(scrollLeft > 6);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 6);
+    }
+  };
+
+  const scrollByAmount = (offset: number) => {
+    if (navRef.current) {
+      navRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+      setTimeout(checkScroll, 200);
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (navRef.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      navRef.current.scrollLeft += e.deltaY;
+      checkScroll();
+    }
+  };
 
   const fetchAccount = async () => {
     try {
@@ -66,6 +102,23 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
   useEffect(() => {
     void fetchAccount();
   }, []);
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []);
+
+  // 页面激活标签自动平滑滚动居中
+  useEffect(() => {
+    if (navRef.current) {
+      const activeEl = navRef.current.querySelector('.global-nav-link.active') as HTMLElement;
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+      checkScroll();
+    }
+  }, [active]);
 
   const handleSignOut = async () => {
     setBusy(true);
@@ -97,34 +150,67 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
           </div>
         </a>
 
-        <nav className="global-nav" aria-label="全局导航">
-          {navItems.map((item) => {
-            const isActive = active === item.key;
-            return (
-              <a
-                key={item.key}
-                href={item.href}
-                className={`global-nav-link ${isActive ? 'active' : ''}`}
-              >
-                {item.label}
-              </a>
-            );
-          })}
-        </nav>
+        {/* 带有平滑横向滑动轨道的导航栏 */}
+        <div className="global-nav-container">
+          {canScrollLeft && (
+            <button
+              type="button"
+              onClick={() => scrollByAmount(-180)}
+              className="nav-scroll-btn mr-1 shadow-xs"
+              title="向左滑动"
+              aria-label="向左滑动导航"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
 
-        <div className="global-topbar-actions flex items-center gap-2.5">
+          <nav 
+            ref={navRef} 
+            onScroll={checkScroll} 
+            onWheel={handleWheel}
+            className="global-nav" 
+            aria-label="全局导航"
+          >
+            {navItems.map((item) => {
+              const isActive = active === item.key;
+              return (
+                <a
+                  key={item.key}
+                  href={item.href}
+                  className={`global-nav-link ${isActive ? 'active' : ''}`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+          </nav>
+
+          {canScrollRight && (
+            <button
+              type="button"
+              onClick={() => scrollByAmount(180)}
+              className="nav-scroll-btn ml-1 shadow-xs"
+              title="向右滑动"
+              aria-label="向右滑动导航"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="global-topbar-actions flex items-center gap-2">
           {extraRight}
 
-          {/* 管理员专属：快速配置他人编辑权限 */}
+          {/* 权限配置专属入口：清爽药丸徽标，仅管理员可见 */}
           {account?.isAdmin && (
             <button
               type="button"
               onClick={() => setShowPermModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/90 text-[#b45309] border border-amber-200/80 font-bold text-xs shadow-2xs transition-all hover:scale-[1.02]"
-              title="研学后台团队权限管理：给其他人增加编辑功能"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#eaf4ed] hover:bg-[#d8ebe0] text-[#1e5838] border border-[#c3ded0] font-semibold text-xs shadow-2xs transition-all hover:scale-[1.02]"
+              title="研学后台团队权限管理：配置其他成员编辑功能"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#b45309]" />
-              <span>团队权限配置</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1e5838]" />
+              <span>团队权限</span>
             </button>
           )}
 
