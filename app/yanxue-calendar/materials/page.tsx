@@ -5,6 +5,7 @@ import { GoogleSignIn } from '@/components/google-sign-in';
 import { QQSignIn } from '@/components/qq-sign-in';
 import { GlobalNav } from '@/components/global-nav';
 import { Printer, PackageCheck, AlertCircle, Calendar as CalendarIcon, ArrowRight, Sparkles } from 'lucide-react';
+import { getBeijingMonth } from '@/lib/beijing-time';
 
 type M = { name: string; qty: string; note: string; done: boolean };
 type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
@@ -24,7 +25,7 @@ const errorText = (value: string) =>
 
 export default function Materials() {
   const [events, setEvents] = useState<E[]>([]);
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(getBeijingMonth());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [account, setAccount] = useState<A | null | undefined>(undefined);
@@ -326,7 +327,7 @@ export default function Materials() {
               ›
             </button>
             <button
-              onClick={() => setMonth(new Date().toISOString().slice(0, 7))}
+              onClick={() => setMonth(getBeijingMonth())}
               className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c]"
             >
               回到本月

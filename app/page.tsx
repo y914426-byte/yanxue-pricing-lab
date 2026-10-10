@@ -18,6 +18,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { MascotClusterLeft, MascotClusterRight } from '@/components/family-mascots';
+import { getBeijingToday, getBeijingMonth } from '@/lib/beijing-time';
 
 type Event = {
   id: string;
@@ -92,8 +93,8 @@ export default function Home() {
     };
   }, []);
 
-  const month = new Date().toISOString().slice(0, 7);
-  const today = new Date().toISOString().slice(0, 10);
+  const month = getBeijingMonth();
+  const today = getBeijingToday();
   const monthEvents = useMemo(() => events.filter((e) => e.date.startsWith(month)), [events, month]);
   const followups = monthEvents.filter((e) => e.status === 'pending' || e.status === 'booking');
   const unready = monthEvents.reduce(

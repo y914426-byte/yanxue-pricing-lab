@@ -28,6 +28,7 @@ import {
   Download
 } from 'lucide-react';
 import { PermissionManagementModal } from '@/components/permission-management-modal';
+import { getBeijingToday, getBeijingMonth, isBeijingToday } from '@/lib/beijing-time';
 
 type M = { name: string; qty: string; note: string; done: boolean };
 type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
@@ -43,7 +44,7 @@ const labels: Record<string, string> = {
 
 const blank = (): E => ({
   id: '',
-  date: new Date().toISOString().slice(0, 10),
+  date: getBeijingToday(),
   name: '',
   audience: '',
   people: 0,
@@ -70,7 +71,7 @@ const quickMaterialPresets = [
 
 export default function Calendar() {
   const [events, setEvents] = useState<E[]>([]);
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(getBeijingMonth());
   const [current, setCurrent] = useState<E | null>(null);
   const [form, setForm] = useState<E>(blank());
   const [editing, setEditing] = useState(false);
@@ -82,7 +83,7 @@ export default function Calendar() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(getBeijingToday());
   const [saving, setSaving] = useState(false);
 
   // 权限管理弹窗状态
@@ -540,7 +541,7 @@ export default function Calendar() {
               <ChevronRight className="w-4 h-4 text-stone-600" />
             </button>
             <button
-              onClick={() => setMonth(new Date().toISOString().slice(0, 7))}
+              onClick={() => setMonth(getBeijingMonth())}
               className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-white text-emerald-800 transition-colors"
             >
               回到本月
@@ -606,7 +607,7 @@ export default function Calendar() {
               {days.map((n, i) => {
                 const date = n ? month + '-' + String(n).padStart(2, '0') : '';
                 const es = list.filter((e) => e.date === date);
-                const isToday = date === new Date().toISOString().slice(0, 10);
+                const isToday = isBeijingToday(date);
 
                 return (
                   <div
