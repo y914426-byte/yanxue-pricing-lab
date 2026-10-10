@@ -1,6 +1,8 @@
 import {cpSync,mkdirSync,readdirSync,writeFileSync} from 'node:fs';
-import {resolve,join} from 'node:path';
-const root=resolve(import.meta.dirname,'..');
+import {resolve,join,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const dir = typeof import.meta.dirname === 'string' ? import.meta.dirname : dirname(fileURLToPath(import.meta.url));
+const root=resolve(dir,'..');
 const client=join(root,'dist/client'), server=join(root,'dist/server');
 const worker=join(client,'_worker.js');
 const files=[];

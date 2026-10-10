@@ -3,18 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs && node scripts/package-pages.mjs",
     "start": "vinext start",
     "lint": "oxlint",
     "format": "oxfmt",
     "test": "node tests/pricing.test.mjs && node tests/storage.test.mjs && node tests/auth.test.mjs && node tests/price-library.test.mjs && node tests/estimate-export.test.mjs && node tests/schemes.test.mjs && node tests/scheme-analysis.test.mjs && node tests/scheme-costing.test.mjs && node tests/scheme-learning.test.mjs && node tests/scheme-similarity.test.mjs && node tests/system-check.test.mjs",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "build:pages": "pnpm build && node scripts/package-pages.mjs"
+    "build:pages": "node scripts/build.mjs && node scripts/package-pages.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
