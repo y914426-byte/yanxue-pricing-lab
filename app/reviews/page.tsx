@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { GlobalNav } from '@/components/global-nav';
 import { ActivityReviewDrawer } from '@/components/ActivityReviewDrawer';
 import { isActivityCompleted } from '@/lib/beijing-time';
-import { canUploadActivityPhotos } from '@/lib/calendar-auth';
+import { canUploadActivityPhotos } from '@/lib/calendar-permissions';
 import { 
   ClipboardCheck, 
   MessageSquare, 

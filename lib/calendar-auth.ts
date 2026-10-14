@@ -148,17 +148,4 @@ export async function checkCalendarUserRole(
   return { canEdit: false, isAdmin: false, role: 'viewer', department: '普通成员', displayName: '' };
 }
 
-/**
- * 校验用户是否拥有上传/删除活动照片的权限（仅主管理员本人拥有此权限）
- */
-export function canUploadActivityPhotos(userEmail?: string | null): boolean {
-  return isRootAdminEmail(userEmail);
-}
-
-/**
- * 校验用户是否拥有填写复盘或发表优化讨论的权限（团队成员与管理员均可）
- */
-export function canParticipateInReview(userEmail?: string | null): boolean {
-  if (!userEmail) return false;
-  return Boolean(userEmail.trim().includes('@'));
-}
+export { canUploadActivityPhotos, canParticipateInReview } from './calendar-permissions';

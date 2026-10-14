@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { canUploadActivityPhotos } from '@/lib/calendar-auth';
+import { canUploadActivityPhotos } from '@/lib/calendar-permissions';
 import { compressImageToWebpDataUrl } from '@/lib/image-compress';
 import { 
   X, 

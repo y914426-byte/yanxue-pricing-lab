@@ -33,7 +33,7 @@ import {
 import { PermissionManagementModal } from '@/components/permission-management-modal';
 import { getBeijingToday, getBeijingMonth, isBeijingToday, isActivityCompleted } from '@/lib/beijing-time';
 import { ActivityReviewDrawer } from '@/components/ActivityReviewDrawer';
-import { canUploadActivityPhotos } from '@/lib/calendar-auth';
+import { canUploadActivityPhotos } from '@/lib/calendar-permissions';
 
 type M = { name: string; qty: string; note: string; done: boolean };
 type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
