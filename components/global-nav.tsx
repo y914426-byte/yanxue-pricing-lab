@@ -19,6 +19,7 @@ import {
   FileText,
   BookMarked,
   Database,
+  ClipboardCheck,
   LayoutGrid,
   X
 } from 'lucide-react';
@@ -28,6 +29,7 @@ export type NavTab =
   | 'overview' 
   | 'pricing' 
   | 'calendar' 
+  | 'reviews'
   | 'materials' 
   | 'schemes' 
   | 'import' 
@@ -67,6 +69,7 @@ export function GlobalNav({ active = 'overview', extraRight, hideCta = false }: 
     { key: 'overview', label: '运营总览', href: '/', icon: Sparkles, desc: '数据速览与近期动态' },
     { key: 'pricing', label: '研学定价台', href: '/pricing', icon: Calculator, desc: '保本核算与毛利测算' },
     { key: 'calendar', label: '活动日历', href: '/yanxue-calendar', icon: CalendarIcon, desc: '团期排期与日程状态' },
+    { key: 'reviews', label: '活动复盘库', href: '/reviews', icon: ClipboardCheck, desc: '执行复盘、经验沉淀与照片' },
     { key: 'materials', label: '物资中心', href: '/yanxue-calendar/materials', icon: PackageCheck, desc: '备货清单与清点核对' },
     { key: 'schemes', label: '研学方案库', href: '/schemes', icon: BookOpen, desc: '精品农耕教案与课程' },
     { key: 'import', label: '方案导入', href: '/scheme-import', icon: FileText, desc: '快速录入与结构化建档' },

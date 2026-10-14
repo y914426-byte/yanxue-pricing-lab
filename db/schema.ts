@@ -235,3 +235,51 @@ export const learningCalendarEvents = sqliteTable('learning_calendar_events', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 }, t => [index('idx_learning_calendar_events_date').on(t.eventDate), index('idx_learning_calendar_events_status_date').on(t.status,t.eventDate)]);
+
+export const learningCalendarReviews = sqliteTable('learning_calendar_reviews', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull().unique(),
+  eventTitle: text('event_title').notNull(),
+  eventDate: text('event_date').notNull(),
+  actualParticipants: integer('actual_participants'),
+  overallRating: integer('overall_rating').default(5),
+  highlights: text('highlights').notNull().default(''),
+  issues: text('issues').notNull().default(''),
+  optimizations: text('optimizations').notNull().default(''),
+  actionStatus: text('action_status').notNull().default('open'),
+  updatedByEmail: text('updated_by_email').notNull(),
+  updatedByName: text('updated_by_name').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, t => [
+  index('idx_learning_calendar_reviews_date').on(t.eventDate),
+  index('idx_learning_calendar_reviews_status').on(t.actionStatus),
+]);
+
+export const learningCalendarReviewComments = sqliteTable('learning_calendar_review_comments', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull(),
+  reviewId: text('review_id').notNull(),
+  authorEmail: text('author_email').notNull(),
+  authorName: text('author_name').notNull(),
+  authorRole: text('author_role').notNull().default('member'),
+  content: text('content').notNull(),
+  category: text('category').notNull().default('optimization'),
+  createdAt: text('created_at').notNull(),
+}, t => [
+  index('idx_learning_calendar_review_comments_event').on(t.eventId),
+  index('idx_learning_calendar_review_comments_review').on(t.reviewId),
+]);
+
+export const learningCalendarPhotos = sqliteTable('learning_calendar_photos', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull(),
+  eventDate: text('event_date').notNull(),
+  imageUrl: text('image_url').notNull(),
+  caption: text('caption').notNull().default(''),
+  uploadedByEmail: text('uploaded_by_email').notNull(),
+  createdAt: text('created_at').notNull(),
+}, t => [
+  index('idx_learning_calendar_photos_event').on(t.eventId),
+  index('idx_learning_calendar_photos_date').on(t.eventDate),
+]);

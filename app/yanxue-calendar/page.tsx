@@ -25,10 +25,15 @@ import {
   Mail,
   ShieldCheck,
   UserPlus,
-  Download
+  Download,
+  ClipboardCheck,
+  Camera,
+  MessageSquare
 } from 'lucide-react';
 import { PermissionManagementModal } from '@/components/permission-management-modal';
-import { getBeijingToday, getBeijingMonth, isBeijingToday } from '@/lib/beijing-time';
+import { getBeijingToday, getBeijingMonth, isBeijingToday, isActivityCompleted } from '@/lib/beijing-time';
+import { ActivityReviewDrawer } from '@/components/ActivityReviewDrawer';
+import { canUploadActivityPhotos } from '@/lib/calendar-auth';
 
 type M = { name: string; qty: string; note: string; done: boolean };
 type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
@@ -93,6 +98,19 @@ export default function Calendar() {
   const [reminderEmail, setReminderEmail] = useState('');
   const [reminderDays, setReminderDays] = useState(1);
   const [reminderStatus, setReminderStatus] = useState('');
+
+  // 活动复盘与优化讨论抽屉状态
+  const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
+  const [reviewEvent, setReviewEvent] = useState<E | null>(null);
+  const [reviewDrawerTab, setReviewDrawerTab] = useState<'review' | 'discussion' | 'photos'>('review');
+
+  const openReviewModal = (event: E, tab: 'review' | 'discussion' | 'photos' = 'review') => {
+    setReviewEvent(event);
+    setReviewDrawerTab(tab);
+    setReviewDrawerOpen(true);
+  };
+
+  const isPhotoAdmin = canUploadActivityPhotos(account?.user?.email);
 
   const load = async () => {
     try {
@@ -369,6 +387,15 @@ export default function Calendar() {
                 <span>团队权限管理</span>
               </button>
             )}
+
+            <a
+              href="/reviews"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-sm transition-colors"
+              title="查看所有历史活动的执行复盘、团队讨论与现场照片"
+            >
+              <ClipboardCheck className="w-3.5 h-3.5 text-[#27563c]" />
+              <span>活动复盘库</span>
+            </a>
 
             <button
               onClick={() => downloadBatchICS(monthEvents, `${y}年${m}月-研学排期日历`)}
@@ -712,7 +739,40 @@ export default function Calendar() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-2.5 flex-shrink-0">
+                        {isActivityCompleted(e.date, null, e.status) && (
+                          <div className="flex items-center gap-1.5" onClick={(ev) => ev.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => openReviewModal(e, 'review')}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-[#27563c] border border-emerald-200 text-xs font-semibold shadow-2xs transition"
+                              title="活动执行复盘与团队优化讨论"
+                            >
+                              <ClipboardCheck className="w-3.5 h-3.5" />
+                              <span>复盘</span>
+                            </button>
+                            {isPhotoAdmin ? (
+                              <button
+                                type="button"
+                                onClick={() => openReviewModal(e, 'photos')}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold shadow-2xs transition"
+                                title="管理员上传活动现场照片"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                                <span>照片</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openReviewModal(e, 'photos')}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-stone-50 hover:bg-stone-100 text-stone-600 border border-stone-200 text-xs transition"
+                                title="浏览现场照片"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <span
                           className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                             e.status === 'confirmed'
@@ -967,6 +1027,68 @@ export default function Calendar() {
                 </div>
               </div>
 
+              {/* 活动已结束执行复盘与优化讨论入口（昨天及以前的活动，或已标记为完成的活动） */}
+              {isActivityCompleted(current.date, null, current.status) && (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-indigo-50/90 border border-emerald-200/80 shadow-xs space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold">
+                        ✓
+                      </span>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-emerald-950">
+                          活动已结束 · 执行复盘与优化讨论
+                        </h4>
+                        <p className="text-[11px] text-emerald-800">
+                          根据东八区时间判定该活动已结束，团队可记录亮点、现场问题与下次优化，并沉淀现场照片。
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => openReviewModal(current, 'review')}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#27563c] hover:bg-[#1e4530] text-white text-xs font-semibold shadow-xs transition"
+                    >
+                      <ClipboardCheck className="w-4 h-4 text-emerald-200" />
+                      <span>📋 记录活动执行复盘</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openReviewModal(current, 'discussion')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-800 text-xs font-semibold shadow-2xs transition"
+                    >
+                      <MessageSquare className="w-4 h-4 text-emerald-600" />
+                      <span>💬 团队优化讨论</span>
+                    </button>
+
+                    {/* 仅主管理员本人可见的上传活动照片按钮 */}
+                    {isPhotoAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => openReviewModal(current, 'photos')}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-semibold shadow-xs transition"
+                      >
+                        <Camera className="w-4 h-4 text-indigo-200" />
+                        <span>📷 上传活动照片 (管理员专属)</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openReviewModal(current, 'photos')}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-xs font-semibold shadow-2xs transition"
+                      >
+                        <Camera className="w-4 h-4 text-indigo-600" />
+                        <span>🖼️ 浏览现场照片</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* 动作区 */}
               <div className="pt-4 border-t border-[#f1eee5] flex flex-wrap justify-between items-center gap-3">
                 <div className="flex gap-2">
@@ -976,6 +1098,16 @@ export default function Calendar() {
                   >
                     <Calculator className="w-3.5 h-3.5" /> 带入定价台测算
                   </button>
+
+                  {isActivityCompleted(current.date, null, current.status) && (
+                    <button
+                      type="button"
+                      onClick={() => openReviewModal(current, 'review')}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#27563c] hover:bg-[#1e4530] text-white shadow-sm"
+                    >
+                      <ClipboardCheck className="w-3.5 h-3.5" /> 活动复盘
+                    </button>
+                  )}
                 </div>
 
                 {canEdit && (
@@ -1253,6 +1385,16 @@ export default function Calendar() {
           isOpen={showPermissions}
           onClose={() => setShowPermissions(false)}
           onUpdated={load}
+        />
+
+        {/* 活动执行复盘与优化讨论抽屉 */}
+        <ActivityReviewDrawer
+          isOpen={reviewDrawerOpen}
+          onClose={() => setReviewDrawerOpen(false)}
+          event={reviewEvent}
+          currentUser={account?.user}
+          initialTab={reviewDrawerTab}
+          onSaved={load}
         />
       </main>
 
