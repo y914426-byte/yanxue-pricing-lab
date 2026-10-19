@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 type EventRow = {
   id:string; event_date:string; name:string; audience:string; people:number; place:string;
-  status:string; flow:string; materials_json:string; note:string; created_at:string; updated_at:string;
+  status:string; flow:string; materials_json:string; note:string; precautions?:string; created_at:string; updated_at:string;
 };
 
 let schemaReady: Promise<void> | undefined;
@@ -26,9 +26,13 @@ async function ensureCalendarSchema(db:ReturnType<typeof getDb>){
         flow TEXT NOT NULL DEFAULT '',
         materials_json TEXT NOT NULL DEFAULT '[]',
         note TEXT NOT NULL DEFAULT '',
+        precautions TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )`).run();
+      try {
+        await db.prepare("ALTER TABLE learning_calendar_events ADD COLUMN precautions TEXT NOT NULL DEFAULT ''").run();
+      } catch {}
       await db.prepare('CREATE INDEX IF NOT EXISTS idx_learning_calendar_events_date ON learning_calendar_events(event_date)').run();
       await db.prepare('CREATE INDEX IF NOT EXISTS idx_learning_calendar_events_status_date ON learning_calendar_events(status,event_date)').run();
     })();
@@ -39,7 +43,7 @@ async function ensureCalendarSchema(db:ReturnType<typeof getDb>){
 function map(row:EventRow){
   let materials:unknown[]=[];
   try{materials=JSON.parse(row.materials_json||'[]')}catch{}
-  return {...row, date:row.event_date, materials};
+  return {...row, date:row.event_date, materials, precautions: row.precautions || ''};
 }
 
 async function handle(request:Request){
@@ -73,15 +77,15 @@ async function handle(request:Request){
       const date=String(body.date??'').slice(0,10),name=String(body.name??'').trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!name)return authReply({error:'日期和活动名称不能为空'},400);
       const materials=Array.isArray(body.materials)?body.materials:[];
-      await db.prepare('INSERT INTO learning_calendar_events (id,event_date,name,audience,people,place,status,flow,materials_json,note,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
-        .bind(id,date,name,String(body.audience??''),Number(body.people??0)||0,String(body.place??''),String(body.status??'pending'),String(body.flow??''),JSON.stringify(materials),String(body.note??''),now,now).run();
+      await db.prepare('INSERT INTO learning_calendar_events (id,event_date,name,audience,people,place,status,flow,materials_json,note,precautions,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(id,date,name,String(body.audience??''),Number(body.people??0)||0,String(body.place??''),String(body.status??'pending'),String(body.flow??''),JSON.stringify(materials),String(body.note??''),String(body.precautions??''),now,now).run();
       return authReply({ok:true,id});
     }
     if(method==='PUT'){
       const id=String(body.id??''); if(!id)return authReply({error:'缺少活动ID'},400);
       const materials=Array.isArray(body.materials)?body.materials:[];
-      await db.prepare('UPDATE learning_calendar_events SET event_date=?,name=?,audience=?,people=?,place=?,status=?,flow=?,materials_json=?,note=?,updated_at=? WHERE id=?')
-        .bind(String(body.date??'').slice(0,10),String(body.name??'').trim(),String(body.audience??''),Number(body.people??0)||0,String(body.place??''),String(body.status??'pending'),String(body.flow??''),JSON.stringify(materials),String(body.note??''),now,id).run();
+      await db.prepare('UPDATE learning_calendar_events SET event_date=?,name=?,audience=?,people=?,place=?,status=?,flow=?,materials_json=?,note=?,precautions=?,updated_at=? WHERE id=?')
+        .bind(String(body.date??'').slice(0,10),String(body.name??'').trim(),String(body.audience??''),Number(body.people??0)||0,String(body.place??''),String(body.status??'pending'),String(body.flow??''),JSON.stringify(materials),String(body.note??''),String(body.precautions??''),now,id).run();
       return authReply({ok:true});
     }
     if(method==='DELETE'){
