@@ -36,7 +36,9 @@ import {
   Check,
   Send,
   Eye,
-  Filter
+  Filter,
+  ChevronDown,
+  MoreHorizontal
 } from 'lucide-react';
 import { PermissionManagementModal } from '@/components/permission-management-modal';
 import { getBeijingToday, getBeijingMonth, isBeijingToday, isActivityCompleted } from '@/lib/beijing-time';
@@ -134,6 +136,7 @@ export default function Calendar() {
   // 全能导出中心弹窗状态
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportCurrentEvent, setExportCurrentEvent] = useState<E | null>(null);
+  const [headerMoreOpen, setHeaderMoreOpen] = useState(false);
 
   // 物资清单过滤状态（当前弹窗内）
   const [materialsFilterTab, setMaterialsFilterTab] = useState<'all' | 'pending' | 'done'>('all');
@@ -496,52 +499,71 @@ export default function Calendar() {
         active="calendar"
         hideCta={true}
         extraRight={
-          <div className="flex items-center gap-2">
-            {isAdmin && (
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* 紧凑型排期工具下拉菜单，大幅节约顶栏横向空间 */}
+            <div className="relative">
               <button
-                onClick={() => {
-                  setShowPermissions(true);
-                  void loadPermissions();
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-sm transition-colors"
-                title="管理团队协作者的编辑与管理权限"
+                type="button"
+                onClick={() => setHeaderMoreOpen(!headerMoreOpen)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-2xs transition-colors"
+                title="打开微信分享、一键导出等工具"
               >
-                <Users className="w-3.5 h-3.5 text-[#27563c]" />
-                <span>团队权限管理</span>
+                <Share2 className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="hidden sm:inline">排期工具</span>
+                <ChevronDown className="w-3 h-3 text-stone-400" />
               </button>
-            )}
 
-            <a
-              href="/reviews"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-sm transition-colors"
-              title="查看所有历史活动的执行复盘、团队讨论与现场照片"
-            >
-              <ClipboardCheck className="w-3.5 h-3.5 text-[#27563c]" />
-              <span>活动复盘库</span>
-            </a>
-
-            <button
-              onClick={() => {
-                setShareEvent(null);
-                setShareDailyDate(undefined);
-                setShareDailyEvents(monthEvents);
-                setShareModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold text-emerald-900 shadow-2xs transition-colors"
-              title="生成本月研学排期微信通报并分享给团队/微信群"
-            >
-              <Share2 className="w-3.5 h-3.5 text-emerald-700" />
-              <span>微信分享本月排期</span>
-            </button>
-
-            <button
-              onClick={() => openExportModal(null)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-sm transition-colors"
-              title="一键导出 Excel 排期报表、手机/电脑系统日历 (.ics)、A4 打印工作单"
-            >
-              <Download className="w-3.5 h-3.5 text-[#d97706]" />
-              <span>日历一键导出</span>
-            </button>
+              {headerMoreOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setHeaderMoreOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1.5 w-48 rounded-xl bg-white border border-stone-200 shadow-xl py-1.5 z-50 text-xs text-stone-700 divide-y divide-stone-100">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          setHeaderMoreOpen(false);
+                          setShareEvent(null);
+                          setShareDailyDate(undefined);
+                          setShareDailyEvents(monthEvents);
+                          setShareModalOpen(true);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2 transition-colors font-medium"
+                      >
+                        <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>微信分享本月排期</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setHeaderMoreOpen(false);
+                          openExportModal(null);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2 transition-colors font-medium"
+                      >
+                        <Download className="w-3.5 h-3.5 text-amber-600" />
+                        <span>日历一键导出中心</span>
+                      </button>
+                    </div>
+                    {isAdmin && (
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setHeaderMoreOpen(false);
+                            setShowPermissions(true);
+                            void loadPermissions();
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-stone-50 flex items-center gap-2 transition-colors"
+                        >
+                          <Users className="w-3.5 h-3.5 text-[#27563c]" />
+                          <span>团队权限管理</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
 
             {canEdit && (
               <button
@@ -549,9 +571,9 @@ export default function Calendar() {
                   setForm(blank());
                   setEditing(true);
                 }}
-                className="global-btn-cta"
+                className="global-btn-cta text-xs px-3 py-1.5 whitespace-nowrap"
               >
-                <Plus className="w-4 h-4" /> 新建活动
+                <Plus className="w-3.5 h-3.5" /> <span className="hidden xs:inline">新建活动</span><span className="xs:hidden">新建</span>
               </button>
             )}
           </div>
@@ -734,7 +756,7 @@ export default function Calendar() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex rounded-lg border border-stone-200 p-0.5 bg-stone-100 text-xs">
               <button
                 className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
@@ -753,6 +775,31 @@ export default function Calendar() {
                 列表视图
               </button>
             </div>
+
+            <div className="h-5 w-px bg-stone-200 hidden sm:block" />
+
+            <button
+              onClick={() => {
+                setShareEvent(null);
+                setShareDailyDate(undefined);
+                setShareDailyEvents(monthEvents);
+                setShareModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold text-emerald-900 shadow-2xs transition-colors"
+              title="生成本月研学排期微信通报并分享给团队/微信群"
+            >
+              <Share2 className="w-3.5 h-3.5 text-emerald-700" />
+              <span>微信分享本月排期</span>
+            </button>
+
+            <button
+              onClick={() => openExportModal(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 shadow-sm transition-colors"
+              title="一键导出 Excel 排期报表、手机/电脑系统日历 (.ics)、A4 打印工作单"
+            >
+              <Download className="w-3.5 h-3.5 text-[#d97706]" />
+              <span>日历一键导出</span>
+            </button>
           </div>
         </div>
 

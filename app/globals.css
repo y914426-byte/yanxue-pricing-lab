@@ -238,7 +238,7 @@ button.family-btn-sand:hover {
 }
 
 .global-topbar-inner {
-  max-width: 1280px;
+  max-width: 1440px;
   height: 52px;
   margin: 0 auto;
   padding: 0 12px;
@@ -250,9 +250,9 @@ button.family-btn-sand:hover {
 
 @media (min-width: 768px) {
   .global-topbar-inner {
-    height: 64px;
-    padding: 0 24px;
-    gap: 16px;
+    height: 60px;
+    padding: 0 20px;
+    gap: 12px;
   }
 }
 
@@ -280,14 +280,14 @@ button.family-btn-sand:hover {
 }
 
 .global-brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   background: var(--color-ink-black, #121212);
   color: #fbfaf9;
   display: grid;
   place-items: center;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   font-family: "Songti SC", "SimSun", "STSong", serif;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -295,7 +295,7 @@ button.family-btn-sand:hover {
 
 .global-brand-text strong {
   display: block;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-ink-black, #121212);
@@ -303,8 +303,8 @@ button.family-btn-sand:hover {
 
 .global-brand-text small {
   display: block;
-  font-size: 9.5px;
-  letter-spacing: 0.10em;
+  font-size: 9px;
+  letter-spacing: 0.08em;
   color: var(--color-muted-gray, #7e7e7d);
   margin-top: 1px;
 }
@@ -316,20 +316,18 @@ button.family-btn-sand:hover {
   align-items: center;
   flex: 1;
   min-width: 0;
-  margin: 0 6px;
+  margin: 0 4px;
 }
 
 .global-nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
-  padding: 4px 6px;
-  mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
+  padding: 3px 4px;
 }
 
 .global-nav::-webkit-scrollbar {
@@ -338,10 +336,10 @@ button.family-btn-sand:hover {
 
 .global-nav-link {
   white-space: nowrap;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-body-brown, #474645);
-  padding: 6px 14px;
+  padding: 5px 9px;
   border-radius: 9999px;
   transition: all 0.16s ease;
   border: 1px solid transparent;

@@ -21,6 +21,7 @@ import {
   Sparkles,
   ClipboardCheck
 } from 'lucide-react';
+import { ReviewImportModal } from '@/components/calendar/ReviewImportModal';
 
 export interface ActivityReviewDrawerProps {
   isOpen: boolean;
@@ -76,9 +77,40 @@ export function ActivityReviewDrawer({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveToast, setSaveToast] = useState('');
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const eventTitle = event?.name || event?.title || '未命名研学活动';
   const isAdmin = canUploadActivityPhotos(currentUser?.email);
+
+  const handleApplyImportedReview = (data: {
+    actualParticipants: number | '';
+    overallRating: number;
+    highlights: string;
+    issues: string;
+    optimizations: string;
+    actionStatus: 'open' | 'in_progress' | 'resolved';
+  }) => {
+    if (data.actualParticipants !== '') {
+      setActualParticipants(data.actualParticipants);
+    }
+    if (data.overallRating) {
+      setOverallRating(data.overallRating);
+    }
+    if (data.highlights) {
+      setHighlights(data.highlights);
+    }
+    if (data.issues) {
+      setIssues(data.issues);
+    }
+    if (data.optimizations) {
+      setOptimizations(data.optimizations);
+    }
+    if (data.actionStatus) {
+      setActionStatus(data.actionStatus);
+    }
+    setSaveToast('✨ 已成功自动识别并填入复盘表单，请核对后点击下方保存！');
+    setTimeout(() => setSaveToast(''), 6000);
+  };
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -356,6 +388,34 @@ export function ActivityReviewDrawer({
                 {/* 1. 复盘记录面板 (KPT 框架) */}
                 {activeTab === 'review' && (
                   <div className="space-y-4">
+                    {/* 智能导入入口横幅 */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 via-stone-50 to-amber-50/50 border border-emerald-200/80 shadow-2xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-800 text-amber-300 flex items-center justify-center shadow-xs shrink-0">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                            <span>智能导入文字 / Word 复盘</span>
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              AI 自动识别
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-500 mt-0.5">
+                            粘贴汇报文字或上传 .docx 文件，自动提取实到人数、满意度及 KPT 详情
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setImportModalOpen(true)}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold shadow-xs transition-colors shrink-0"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>导入识别</span>
+                      </button>
+                    </div>
+
                     {/* 基础指标 */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
                       <div>
@@ -740,6 +800,15 @@ export function ActivityReviewDrawer({
           </div>
         </div>
       )}
+
+      {/* 智能导入文字 / Word 识别弹窗 */}
+      <ReviewImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        planParticipants={event?.people}
+        eventTitle={eventTitle}
+        onApply={handleApplyImportedReview}
+      />
     </>
   );
 }
