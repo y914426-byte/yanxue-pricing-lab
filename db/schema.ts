@@ -283,3 +283,26 @@ export const learningCalendarPhotos = sqliteTable('learning_calendar_photos', {
   index('idx_learning_calendar_photos_event').on(t.eventId),
   index('idx_learning_calendar_photos_date').on(t.eventDate),
 ]);
+
+
+export const learningWarehouseMaterials = sqliteTable('learning_warehouse_materials', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  zone: text('zone').notNull().default(''),
+  category: text('category').notNull().default('常规物资'),
+  quantity: real('quantity').notNull().default(0),
+  unit: text('unit').notNull().default('件'),
+  safeQuantity: real('safe_quantity').notNull().default(0),
+  specification: text('specification').notNull().default(''),
+  unitPrice: real('unit_price').notNull().default(0),
+  supplier: text('supplier').notNull().default(''),
+  status: text('status').notNull().default('normal'),
+  note: text('note').notNull().default(''),
+  updatedByEmail: text('updated_by_email').notNull().default(''),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (t) => [
+  index('idx_learning_warehouse_materials_name').on(t.name),
+  index('idx_learning_warehouse_materials_zone').on(t.zone),
+  index('idx_learning_warehouse_materials_category').on(t.category),
+]);

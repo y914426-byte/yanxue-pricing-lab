@@ -4,13 +4,43 @@ import { useEffect, useMemo, useState } from 'react';
 import { GoogleSignIn } from '@/components/google-sign-in';
 import { QQSignIn } from '@/components/qq-sign-in';
 import { GlobalNav } from '@/components/global-nav';
-import { Printer, PackageCheck, AlertCircle, Calendar as CalendarIcon, ArrowRight, Sparkles } from 'lucide-react';
+import {
+  Printer,
+  PackageCheck,
+  AlertCircle,
+  Warehouse,
+  ClipboardList,
+  MapPin,
+  Sparkles,
+  ExternalLink,
+  Plus
+} from 'lucide-react';
 import { getBeijingMonth } from '@/lib/beijing-time';
+import { WarehouseMaterialsView, type WarehouseMaterial } from '@/components/WarehouseMaterialsView';
 
 type M = { name: string; qty: string; note: string; done: boolean };
-type E = { id: string; date: string; name: string; audience: string; people: number; place: string; status: string; flow: string; materials: M[]; note: string };
+type E = {
+  id: string;
+  date: string;
+  name: string;
+  audience: string;
+  people: number;
+  place: string;
+  status: string;
+  flow: string;
+  materials: M[];
+  note: string;
+};
 type A = { user: { displayName: string; email: string } | null; clientId: string | null };
-type Use = { eventId: string; materialIndex: number; date: string; eventName: string; qty: string; done: boolean; note: string };
+type Use = {
+  eventId: string;
+  materialIndex: number;
+  date: string;
+  eventName: string;
+  qty: string;
+  done: boolean;
+  note: string;
+};
 type Item = { name: string; unit: string; total: number; uses: Use[] };
 
 function parseQty(q: string) {
@@ -24,6 +54,10 @@ const errorText = (value: string) =>
     : value;
 
 export default function Materials() {
+  // 两个核心选项切换：'warehouse' (研学仓库现有物资明细) | 'activity' (现在的活动排期备货中心)
+  const [activeTab, setActiveTab] = useState<'warehouse' | 'activity'>('warehouse');
+
+  // 活动备货相关状态
   const [events, setEvents] = useState<E[]>([]);
   const [month, setMonth] = useState(getBeijingMonth());
   const [loading, setLoading] = useState(true);
@@ -34,6 +68,29 @@ export default function Materials() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'ready'>('all');
   const [saving, setSaving] = useState('');
   const [drafts, setDrafts] = useState<Record<string, { qty?: string; note?: string }>>({});
+
+  // 仓库物资列表（用于选项联动与展示所在区块提示）
+  const [warehouseMaterials, setWarehouseMaterials] = useState<WarehouseMaterial[]>([]);
+
+  // 从 URL 参数同步 tab
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const tabParam = sp.get('tab');
+      if (tabParam === 'activity' || tabParam === 'warehouse') {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
+
+  const switchTab = (tab: 'warehouse' | 'activity') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
 
   const load = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -173,6 +230,23 @@ export default function Materials() {
     }
   };
 
+  // 在仓库物资中查找与活动所需物资同名的库存项（模糊或精准对应）
+  const findWarehouseMatch = (materialName: string) => {
+    if (!warehouseMaterials.length || !materialName.trim()) return null;
+    const cleanName = materialName.trim().toLowerCase();
+    // 1. 精确匹配
+    const exact = warehouseMaterials.find((w) => w.name.trim().toLowerCase() === cleanName);
+    if (exact) return exact;
+    // 2. 包含匹配
+    return (
+      warehouseMaterials.find(
+        (w) =>
+          cleanName.includes(w.name.trim().toLowerCase()) ||
+          w.name.trim().toLowerCase().includes(cleanName)
+      ) || null
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f7f2] text-[#1e2c22]">
       <GlobalNav
@@ -182,10 +256,10 @@ export default function Materials() {
             type="button"
             onClick={() => window.print()}
             className="global-btn-secondary"
-            title="打印或导出当前月份物资备货清单"
+            title={activeTab === 'warehouse' ? '打印研学仓库盘点清单' : '打印当前月份物资备货清单'}
           >
             <Printer className="w-4 h-4 text-[#27563c]" />
-            <span>打印备货清单</span>
+            <span>{activeTab === 'warehouse' ? '打印仓库盘点单' : '打印备货清单'}</span>
           </button>
         }
       />
@@ -195,14 +269,14 @@ export default function Materials() {
         {/* 顶部标题区 */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-4 border-b border-[#e3ded2]">
           <div>
-            <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase">
-              OPERATIONS · MATERIALS HUB
+            <span className="text-xs font-bold text-[#5d6e62] tracking-wider uppercase flex items-center gap-1.5">
+              <span>OPERATIONS · MATERIALS HUB</span>
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1e2c22] mt-1">
-              研学物资准备中心
+              研学物资中心
             </h1>
             <p className="text-xs sm:text-sm text-[#5d6e62] mt-1">
-              按月汇总全园活动物资需求；后勤与带班导师协同备货，直观勾选准备状态。
+              园区仓库现有物资资产明细、存放区块定位；按月活动物资排期备货全流程协同。
             </p>
           </div>
 
@@ -256,6 +330,77 @@ export default function Materials() {
           </div>
         </div>
 
+        {/* 核心双选项卡切换 Bar (Tabs) */}
+        <nav aria-label="物资中心选项切换" className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-1.5 bg-[#ede9de] rounded-2xl border border-[#ded9cd]">
+          {/* 选项一：研学仓库现有物资明细 */}
+          <button
+            type="button"
+            onClick={() => switchTab('warehouse')}
+            className={`flex items-center gap-3.5 p-3.5 rounded-xl text-left transition-all ${
+              activeTab === 'warehouse'
+                ? 'bg-white text-[#1e2c22] shadow-md border border-[#c9e3d2]'
+                : 'text-[#5d6e62] hover:bg-white/60 hover:text-[#1e2c22]'
+            }`}
+          >
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                activeTab === 'warehouse'
+                  ? 'bg-[#27563c] text-white shadow-xs'
+                  : 'bg-white/80 text-[#5d6e62]'
+              }`}
+            >
+              <Warehouse className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm sm:text-base">
+                  研学仓库现有物资明细
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#edf5ef] text-[#27563c] font-bold">
+                  含所在区块(输入)
+                </span>
+              </div>
+              <p className="text-xs text-[#5d6e62] mt-0.5 line-clamp-1">
+                基地固定道具与耗材库存、存放区块位置、安全库存预警与盘点核对
+              </p>
+            </div>
+          </button>
+
+          {/* 选项二：现在的活动排期备货中心 */}
+          <button
+            type="button"
+            onClick={() => switchTab('activity')}
+            className={`flex items-center gap-3.5 p-3.5 rounded-xl text-left transition-all ${
+              activeTab === 'activity'
+                ? 'bg-white text-[#1e2c22] shadow-md border border-[#c9e3d2]'
+                : 'text-[#5d6e62] hover:bg-white/60 hover:text-[#1e2c22]'
+            }`}
+          >
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                activeTab === 'activity'
+                  ? 'bg-[#27563c] text-white shadow-xs'
+                  : 'bg-white/80 text-[#5d6e62]'
+              }`}
+            >
+              <ClipboardList className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm sm:text-base">
+                  活动排期物资准备中心
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 text-[#5d6e62] font-semibold">
+                  现有的月度排期协同
+                </span>
+              </div>
+              <p className="text-xs text-[#5d6e62] mt-0.5 line-clamp-1">
+                按月汇总全园活动物资需求；后勤与带班导师协同备货，直观勾选准备状态
+              </p>
+            </div>
+          </button>
+        </nav>
+
         {error && (
           <div className="p-3.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -263,270 +408,318 @@ export default function Materials() {
           </div>
         )}
 
-        {/* 汇总统计看板 - 清晰易读 */}
-        <section className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
-            <span className="text-xs text-[#5d6e62] font-medium block">本月活动场次</span>
-            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
-              {monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
-            </strong>
-            <span className="text-[11px] text-[#8b998e] mt-0.5 block">已排期活动总数</span>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
-            <span className="text-xs text-[#5d6e62] font-medium block">物资品类总数</span>
-            <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
-              {items.length} <small className="text-xs font-normal text-[#5d6e62]">项</small>
-            </strong>
-            <span className="text-[11px] text-[#8b998e] mt-0.5 block">同名物资自动合并</span>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
-            <span className="text-xs text-[#5d6e62] font-medium block">待准备事项</span>
-            <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
-              {pending} <small className="text-xs font-normal text-[#5d6e62]">项</small>
-            </strong>
-            <span className="text-[11px] text-[#d97706] mt-0.5 block">待后勤老师备齐</span>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
-            <span className="text-xs text-[#5d6e62] font-medium block">已就绪完成</span>
-            <strong className="block text-2xl font-extrabold text-[#16a34a] mt-1">
-              {ready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
-            </strong>
-            <span className="text-[11px] text-[#16a34a] mt-0.5 block">状态已勾选完成</span>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs col-span-2 sm:col-span-1">
-            <span className="text-xs text-[#5d6e62] font-medium block">预计参与总人数</span>
-            <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
-              {people} <small className="text-xs font-normal text-[#5d6e62]">人</small>
-            </strong>
-            <span className="text-[11px] text-[#8b998e] mt-0.5 block">全月营员与带队</span>
-          </div>
-        </section>
-
-        {/* 筛选与操作栏 */}
-        <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <button
-              aria-label="上个月"
-              onClick={() => shift(-1)}
-              className="px-2 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-xs font-bold"
-            >
-              ‹
-            </button>
-            <strong className="text-base font-bold text-[#1e2c22] px-2">
-              {month.slice(0, 4)} 年 {Number(month.slice(5))} 月
-            </strong>
-            <button
-              aria-label="下个月"
-              onClick={() => shift(1)}
-              className="px-2 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-xs font-bold"
-            >
-              ›
-            </button>
-            <button
-              onClick={() => setMonth(getBeijingMonth())}
-              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c]"
-            >
-              回到本月
-            </button>
-          </div>
-
-          <input
-            placeholder="搜索物资品名、对应活动或备注…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 max-w-sm text-xs px-3 py-2 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white focus:outline-none focus:border-[#27563c]"
+        {/* 视图一：研学仓库现有物资明细（包含物资所在区块输入与管理） */}
+        {activeTab === 'warehouse' ? (
+          <WarehouseMaterialsView
+            canEdit={canEdit}
+            onMaterialsLoaded={(m) => setWarehouseMaterials(m)}
           />
-
-          <div className="flex rounded-lg border border-[#e3ded2] p-0.5 bg-[#f8f7f2] text-xs">
-            <button
-              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                filter === 'all' ? 'bg-white text-[#27563c] shadow-sm' : 'text-[#5d6e62]'
-              }`}
-              onClick={() => setFilter('all')}
-            >
-              全部 ({items.length})
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                filter === 'pending' ? 'bg-white text-[#d97706] shadow-sm' : 'text-[#5d6e62]'
-              }`}
-              onClick={() => setFilter('pending')}
-            >
-              待准备 ({pending})
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                filter === 'ready' ? 'bg-white text-[#16a34a] shadow-sm' : 'text-[#5d6e62]'
-              }`}
-              onClick={() => setFilter('ready')}
-            >
-              已就绪 ({ready})
-            </button>
-          </div>
-        </div>
-
-        {!canEdit && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex justify-between items-center">
-            <span>
-              {account?.user
-                ? '当前登录账号没有物资备货的修改权限。'
-                : '以管理员账号登录后，可直接在下方勾选物资准备完成状态。'}
-            </span>
-            <a href="/yanxue-calendar" className="text-[#27563c] font-bold hover:underline">
-              前往活动排期日历 →
-            </a>
-          </div>
-        )}
-
-        {/* 物资卡片列表 */}
-        {loading ? (
-          <div className="py-20 text-center text-xs text-[#5d6e62] space-y-2">
-            <PackageCheck className="w-8 h-8 mx-auto animate-pulse text-[#27563c]" />
-            <p>正在读取物资清单…</p>
-          </div>
-        ) : visible.length === 0 ? (
-          <div className="py-16 bg-white rounded-2xl border border-dashed border-[#e3ded2] text-center space-y-3 max-w-lg mx-auto p-8 shadow-xs">
-            <PackageCheck className="w-10 h-10 mx-auto text-[#8b998e]" />
-            <div>
-              <p className="text-base font-bold text-[#1e2c22]">
-                {items.length === 0 ? '本月暂无活动填写物资需求' : '没有符合当前搜索和筛选条件的物资'}
-              </p>
-              <p className="text-xs text-[#5d6e62] mt-1 leading-relaxed">
-                可前往活动日历填写或排期新活动，系统将自动汇总各场活动的物资备货。
-              </p>
-            </div>
-            {canEdit && (
-              <a
-                href="/yanxue-calendar"
-                className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-[#edf5ef] text-[#27563c] hover:bg-[#dcefe0] transition-colors shadow-xs"
-              >
-                前往活动日历添加或编辑物资 →
-              </a>
-            )}
-          </div>
         ) : (
-          <section className="space-y-4">
-            {visible.map((item) => {
-              return (
-                <article
-                  key={item.name}
-                  className="bg-white rounded-2xl border border-[#e3ded2] shadow-xs overflow-hidden transition-all hover:border-[#27563c]/40"
+          /* 视图二：活动排期备货中心（现有的模块，强化与仓库所在区块的智能联动） */
+          <div className="space-y-6">
+            {/* 汇总统计看板 - 清晰易读 */}
+            <section className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+              <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+                <span className="text-xs text-[#5d6e62] font-medium block">本月活动场次</span>
+                <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+                  {monthEvents.length} <small className="text-xs font-normal text-[#5d6e62]">场</small>
+                </strong>
+                <span className="text-[11px] text-[#8b998e] mt-0.5 block">已排期活动总数</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+                <span className="text-xs text-[#5d6e62] font-medium block">物资品类总数</span>
+                <strong className="block text-2xl font-extrabold text-[#27563c] mt-1">
+                  {items.length} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+                </strong>
+                <span className="text-[11px] text-[#8b998e] mt-0.5 block">同名物资自动合并</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+                <span className="text-xs text-[#5d6e62] font-medium block">待准备事项</span>
+                <strong className="block text-2xl font-extrabold text-[#d97706] mt-1">
+                  {pending} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+                </strong>
+                <span className="text-[11px] text-[#d97706] mt-0.5 block">待后勤老师备齐</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs">
+                <span className="text-xs text-[#5d6e62] font-medium block">已就绪完成</span>
+                <strong className="block text-2xl font-extrabold text-[#16a34a] mt-1">
+                  {ready} <small className="text-xs font-normal text-[#5d6e62]">项</small>
+                </strong>
+                <span className="text-[11px] text-[#16a34a] mt-0.5 block">状态已勾选完成</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-xs col-span-2 sm:col-span-1">
+                <span className="text-xs text-[#5d6e62] font-medium block">预计参与总人数</span>
+                <strong className="block text-2xl font-extrabold text-[#1e2c22] mt-1">
+                  {people} <small className="text-xs font-normal text-[#5d6e62]">人</small>
+                </strong>
+                <span className="text-[11px] text-[#8b998e] mt-0.5 block">全月营员与带队</span>
+              </div>
+            </section>
+
+            {/* 筛选与操作栏 */}
+            <div className="p-4 rounded-xl bg-white border border-[#e3ded2] shadow-sm flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <button
+                  aria-label="上个月"
+                  onClick={() => shift(-1)}
+                  className="px-2 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-xs font-bold"
                 >
-                  <header className="p-4 bg-[#fbfaf7] border-b border-[#e3ded2] flex justify-between items-center">
-                    <div>
-                      <h2 className="text-base font-extrabold text-[#1e2c22]">
-                        {item.name}
-                      </h2>
-                      {item.unit && (
-                        <small className="text-xs text-[#5d6e62] block mt-0.5">
-                          计量单位：{item.unit}
-                        </small>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <strong className="text-base font-extrabold text-[#27563c]">
-                        月度总需：{item.total ? item.total + (item.unit ? ' ' + item.unit : '') : item.uses.map((x) => x.qty).join('、')}
-                      </strong>
-                    </div>
-                  </header>
+                  ‹
+                </button>
+                <strong className="text-base font-bold text-[#1e2c22] px-2">
+                  {month.slice(0, 4)} 年 {Number(month.slice(5))} 月
+                </strong>
+                <button
+                  aria-label="下个月"
+                  onClick={() => shift(1)}
+                  className="px-2 py-1 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-xs font-bold"
+                >
+                  ›
+                </button>
+                <button
+                  onClick={() => setMonth(getBeijingMonth())}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] hover:bg-white text-[#27563c]"
+                >
+                  回到本月
+                </button>
+              </div>
 
-                <div className="divide-y divide-[#f1eee5]">
-                  {item.uses.map((use) => {
-                    const key = use.eventId + ':' + use.materialIndex;
-                    return (
-                      <div
-                        key={key}
-                        className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#faf9f5] transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <time className="text-xs font-bold text-[#27563c] w-20 flex-shrink-0">
-                            {use.date}
-                          </time>
-                          <strong className="text-xs font-bold text-[#1e2c22] truncate max-w-xs">
-                            {use.eventName}
-                          </strong>
-                        </div>
+              <input
+                placeholder="搜索物资品名、对应活动或备注…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="flex-1 max-w-sm text-xs px-3 py-2 rounded-lg border border-[#e3ded2] bg-[#f8f7f2] focus:bg-white focus:outline-none focus:border-[#27563c]"
+              />
 
-                        <div className="flex items-center gap-4 flex-1 justify-end">
-                          {canEdit ? (
-                            <div className="flex items-center gap-2 text-xs">
-                              <label className="flex items-center gap-1 text-[#5d6e62]">
-                                <span>数量:</span>
-                                <input
-                                  value={drafts[key]?.qty ?? use.qty}
-                                  disabled={saving === key}
-                                  onChange={(e) =>
-                                    setDrafts((old) => ({
-                                      ...old,
-                                      [key]: { ...old[key], qty: e.target.value },
-                                    }))
-                                  }
-                                  onBlur={() => void commitField(use, 'qty')}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') e.currentTarget.blur();
-                                  }}
-                                  className="w-24 p-1 rounded border border-[#e3ded2] bg-white text-xs"
-                                />
-                              </label>
-                              <label className="flex items-center gap-1 text-[#5d6e62]">
-                                <span>备注:</span>
-                                <input
-                                  value={drafts[key]?.note ?? use.note}
-                                  disabled={saving === key}
-                                  onChange={(e) =>
-                                    setDrafts((old) => ({
-                                      ...old,
-                                      [key]: { ...old[key], note: e.target.value },
-                                    }))
-                                  }
-                                  onBlur={() => void commitField(use, 'note')}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') e.currentTarget.blur();
-                                  }}
-                                  className="w-32 p-1 rounded border border-[#e3ded2] bg-white text-xs"
-                                />
-                              </label>
+              <div className="flex rounded-lg border border-[#e3ded2] p-0.5 bg-[#f8f7f2] text-xs">
+                <button
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                    filter === 'all' ? 'bg-white text-[#27563c] shadow-sm' : 'text-[#5d6e62]'
+                  }`}
+                  onClick={() => setFilter('all')}
+                >
+                  全部 ({items.length})
+                </button>
+                <button
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                    filter === 'pending' ? 'bg-white text-[#d97706] shadow-sm' : 'text-[#5d6e62]'
+                  }`}
+                  onClick={() => setFilter('pending')}
+                >
+                  待准备 ({pending})
+                </button>
+                <button
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                    filter === 'ready' ? 'bg-white text-[#16a34a] shadow-sm' : 'text-[#5d6e62]'
+                  }`}
+                  onClick={() => setFilter('ready')}
+                >
+                  已就绪 ({ready})
+                </button>
+              </div>
+            </div>
+
+            {!canEdit && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex justify-between items-center">
+                <span>
+                  {account?.user
+                    ? '当前登录账号没有物资备货的修改权限。'
+                    : '以管理员账号登录后，可直接在下方勾选物资准备完成状态。'}
+                </span>
+                <a href="/yanxue-calendar" className="text-[#27563c] font-bold hover:underline">
+                  前往活动排期日历 →
+                </a>
+              </div>
+            )}
+
+            {/* 物资卡片列表 */}
+            {loading ? (
+              <div className="py-20 text-center text-xs text-[#5d6e62] space-y-2">
+                <PackageCheck className="w-8 h-8 mx-auto animate-pulse text-[#27563c]" />
+                <p>正在读取物资清单…</p>
+              </div>
+            ) : visible.length === 0 ? (
+              <div className="py-16 bg-white rounded-2xl border border-dashed border-[#e3ded2] text-center space-y-3 max-w-lg mx-auto p-8 shadow-xs">
+                <PackageCheck className="w-10 h-10 mx-auto text-[#8b998e]" />
+                <div>
+                  <p className="text-base font-bold text-[#1e2c22]">
+                    {items.length === 0 ? '本月暂无活动填写物资需求' : '没有符合当前搜索和筛选条件的物资'}
+                  </p>
+                  <p className="text-xs text-[#5d6e62] mt-1 leading-relaxed">
+                    可前往活动日历填写或排期新活动，系统将自动汇总各场活动的物资备货。
+                  </p>
+                </div>
+                {canEdit && (
+                  <a
+                    href="/yanxue-calendar"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-[#edf5ef] text-[#27563c] hover:bg-[#dcefe0] transition-colors shadow-xs"
+                  >
+                    前往活动日历添加或编辑物资 →
+                  </a>
+                )}
+              </div>
+            ) : (
+              <section className="space-y-4">
+                {visible.map((item) => {
+                  // 匹配仓库中该物资的存放区块和现存量
+                  const whMatch = findWarehouseMatch(item.name);
+
+                  return (
+                    <article
+                      key={item.name}
+                      className="bg-white rounded-2xl border border-[#e3ded2] shadow-xs overflow-hidden transition-all hover:border-[#27563c]/40"
+                    >
+                      <header className="p-4 bg-[#fbfaf7] border-b border-[#e3ded2] flex flex-wrap justify-between items-center gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-base font-extrabold text-[#1e2c22]">
+                              {item.name}
+                            </h2>
+                            {item.unit && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-stone-100 text-[#5d6e62]">
+                                单位：{item.unit}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* 联动亮点：智能显示仓库所在区块与当前实物库存 */}
+                          {whMatch ? (
+                            <div className="flex items-center gap-2 mt-1.5 text-xs">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#edf5ef] text-[#27563c] border border-[#c9e3d2] font-semibold">
+                                <MapPin className="w-3 h-3 text-[#27563c]" />
+                                <span>仓库区块: {whMatch.zone || '未指定'}</span>
+                              </span>
+
+                              <span className="text-[#5d6e62]">
+                                仓库现存: <strong className="text-[#1e2c22]">{whMatch.quantity}</strong> {whMatch.unit}
+                              </span>
+
+                              {item.total > whMatch.quantity && (
+                                <span className="text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                                  需补货备货 (差 {item.total - whMatch.quantity} {item.unit})
+                                </span>
+                              )}
                             </div>
                           ) : (
-                            <div className="text-xs text-[#5d6e62]">
-                              <span>{use.qty || '未填数量'}</span>
-                              {use.note && <span className="ml-1 text-[#8b998e]">（{use.note}）</span>}
+                            <div className="mt-1 text-xs text-[#8b998e] flex items-center gap-1">
+                              <span>仓库明细中暂未收录此品名</span>
+                              <button
+                                type="button"
+                                onClick={() => switchTab('warehouse')}
+                                className="text-[#27563c] hover:underline font-semibold"
+                              >
+                                前往登记入库并指定区块 →
+                              </button>
                             </div>
                           )}
-
-                          <button
-                            disabled={!canEdit || saving === key}
-                            onClick={() => void updateUse(use, { done: !use.done })}
-                            className={`text-xs px-3 py-1.5 rounded-full font-bold transition-colors ${
-                              use.done
-                                ? 'bg-[#edf5ef] text-[#27563c] border border-[#c9e3d2]'
-                                : 'bg-[#fef7ec] text-[#d97706] border border-[#f7dfbe]'
-                            }`}
-                          >
-                            {saving === key ? '保存中…' : use.done ? '✓ 已就绪' : '○ 待准备'}
-                          </button>
                         </div>
+
+                        <div className="text-right">
+                          <strong className="text-base font-extrabold text-[#27563c]">
+                            月度总需：{item.total ? item.total + (item.unit ? ' ' + item.unit : '') : item.uses.map((x) => x.qty).join('、')}
+                          </strong>
+                        </div>
+                      </header>
+
+                      <div className="divide-y divide-[#f1eee5]">
+                        {item.uses.map((use) => {
+                          const key = use.eventId + ':' + use.materialIndex;
+                          return (
+                            <div
+                              key={key}
+                              className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#faf9f5] transition-colors"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <time className="text-xs font-bold text-[#27563c] w-20 flex-shrink-0">
+                                  {use.date}
+                                </time>
+                                <strong className="text-xs font-bold text-[#1e2c22] truncate max-w-xs">
+                                  {use.eventName}
+                                </strong>
+                              </div>
+
+                              <div className="flex items-center gap-4 flex-1 justify-end">
+                                {canEdit ? (
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <label className="flex items-center gap-1 text-[#5d6e62]">
+                                      <span>数量:</span>
+                                      <input
+                                        value={drafts[key]?.qty ?? use.qty}
+                                        disabled={saving === key}
+                                        onChange={(e) =>
+                                          setDrafts((old) => ({
+                                            ...old,
+                                            [key]: { ...old[key], qty: e.target.value },
+                                          }))
+                                        }
+                                        onBlur={() => void commitField(use, 'qty')}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') e.currentTarget.blur();
+                                        }}
+                                        className="w-24 p-1 rounded border border-[#e3ded2] bg-white text-xs"
+                                      />
+                                    </label>
+                                    <label className="flex items-center gap-1 text-[#5d6e62]">
+                                      <span>备注:</span>
+                                      <input
+                                        value={drafts[key]?.note ?? use.note}
+                                        disabled={saving === key}
+                                        onChange={(e) =>
+                                          setDrafts((old) => ({
+                                            ...old,
+                                            [key]: { ...old[key], note: e.target.value },
+                                          }))
+                                        }
+                                        onBlur={() => void commitField(use, 'note')}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') e.currentTarget.blur();
+                                        }}
+                                        className="w-32 p-1 rounded border border-[#e3ded2] bg-white text-xs"
+                                      />
+                                    </label>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-[#5d6e62]">
+                                    <span>{use.qty || '未填数量'}</span>
+                                    {use.note && <span className="ml-1 text-[#8b998e]">（{use.note}）</span>}
+                                  </div>
+                                )}
+
+                                <button
+                                  disabled={!canEdit || saving === key}
+                                  onClick={() => void updateUse(use, { done: !use.done })}
+                                  className={`text-xs px-3 py-1.5 rounded-full font-bold transition-colors ${
+                                    use.done
+                                      ? 'bg-[#edf5ef] text-[#27563c] border border-[#c9e3d2]'
+                                      : 'bg-[#fef7ec] text-[#d97706] border border-[#f7dfbe]'
+                                  }`}
+                                >
+                                  {saving === key ? '保存中…' : use.done ? '✓ 已就绪' : '○ 待准备'}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
-              </article>
-            );
-          })}
-          </section>
+                    </article>
+                  );
+                })}
+              </section>
+            )}
+          </div>
         )}
       </main>
 
       <footer className="global-footer">
         <div className="global-footer-inner">
           <div>
-            <strong>江南农耕研学 · 物资准备中心</strong>
+            <strong>江南农耕研学 · 物资中心</strong>
             <span className="ml-3 text-xs text-[#5d6e62]">
-              同名物资自动合并需求，各场活动独立保存状态。
+              仓库物资所在区块明细管理 · 各场活动排期备货状态实时协同
             </span>
           </div>
           <span>© 2026 江南农耕文化研学项目组</span>
@@ -538,7 +731,7 @@ export default function Materials() {
 
 const materialsStyles = `
   @media print {
-    .global-topbar, .global-footer, .controls, .account-tools, button {
+    .global-topbar, .global-footer, .controls, .account-tools, button, nav[aria-label="物资中心选项切换"] {
       display: none !important;
     }
     body {
