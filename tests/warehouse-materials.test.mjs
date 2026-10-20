@@ -7,31 +7,31 @@ const testMaterials = [
   {
     id: 'm1',
     name: '手工编织斗笠草帽',
-    zone: 'A区-传统农具农械库',
+    zone: '西门隔壁仓库',
     category: '农耕工具',
     quantity: 60,
     unit: '顶',
     safeQuantity: 20,
     specification: '手工竹编带防风系带',
     status: 'normal',
-    note: '悬挂于 A区-01号农具墙',
+    note: '悬挂于 西门隔壁仓库农具墙',
   },
   {
     id: 'm2',
     name: '传统双耳青石小石磨',
-    zone: 'D区-农耕烘焙手作室',
+    zone: '稻田餐厅仓库',
     category: '农耕工具',
     quantity: 8,
     unit: '台',
     safeQuantity: 2,
     specification: '直径20cm 天然青石',
     status: 'normal',
-    note: '烘焙手作台专用',
+    note: '稻田餐厅手作台专用',
   },
   {
     id: 'm3',
     name: '扎染天然植物蓼蓝染液',
-    zone: 'B区-非遗手工扎染坊',
+    zone: '摩天轮仓库',
     category: '手工非遗',
     quantity: 3,
     unit: '瓶',
@@ -50,7 +50,7 @@ const testMaterials = [
     safeQuantity: 30,
     specification: '乳胶加厚耐磨',
     status: 'normal',
-    note: '总务箱待分拣',
+    note: '小森林营地总务箱待分拣',
   },
 ];
 
@@ -80,7 +80,7 @@ function computeStats(list) {
 const stats = computeStats(testMaterials);
 assert.equal(stats.totalKinds, 4, '品类数应为 4');
 assert.equal(stats.totalQuantity, 71, '总库存应为 60+8+3+0 = 71');
-assert.equal(stats.zoneCount, 3, '区块数应为 3 (A区, B区, D区)');
+assert.equal(stats.zoneCount, 3, '区块数应为 3 (西门隔壁仓库, 摩天轮仓库, 稻田餐厅仓库)');
 assert.equal(stats.lowStockCount, 2, '待补货应为 2 (蓼蓝染液低于安全库存5，手套缺货0)');
 
 // 3. 区块与品名关键词模糊过滤逻辑测试
@@ -106,8 +106,8 @@ function filterMaterials(list, query, zone) {
   });
 }
 
-// 搜区块关键字 "扎染坊"
-const matchedByZone = filterMaterials(testMaterials, '扎染坊', 'all');
+// 搜区块关键字 "摩天轮"
+const matchedByZone = filterMaterials(testMaterials, '摩天轮', 'all');
 assert.equal(matchedByZone.length, 1);
 assert.equal(matchedByZone[0].id, 'm3');
 
@@ -126,10 +126,10 @@ function matchWarehouseItem(whList, activityMaterialName) {
 
 const matched1 = matchWarehouseItem(testMaterials, '草帽');
 assert.ok(matched1, '活动所需「草帽」应模糊匹配到仓库中的「手工编织斗笠草帽」');
-assert.equal(matched1.zone, 'A区-传统农具农械库');
+assert.equal(matched1.zone, '西门隔壁仓库');
 
 const matched2 = matchWarehouseItem(testMaterials, '传统双耳青石小石磨');
 assert.ok(matched2, '精确匹配小石磨');
-assert.equal(matched2.zone, 'D区-农耕烘焙手作室');
+assert.equal(matched2.zone, '稻田餐厅仓库');
 
 console.log('Passed: warehouse materials stats, zone extraction, search filtering, and activity-warehouse matching.');

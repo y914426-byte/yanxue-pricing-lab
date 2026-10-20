@@ -48,13 +48,10 @@ interface WarehouseMaterialsViewProps {
 
 // 推荐的常见研学仓储区块预设（供快速点选与一键填充）
 const COMMON_ZONES = [
-  'A区-传统农具农械库',
-  'B区-非遗手工扎染坊',
-  'C区-自然科普大棚区',
-  'D区-农耕烘焙手作室',
-  'E区-户外营队拓展区',
-  'F区-防护劳保总务仓',
-  'G区-音响电子与教学具',
+  '西门隔壁仓库',
+  '摩天轮仓库',
+  '稻田餐厅仓库',
+  '小森林营地仓库',
 ];
 
 // 常见分类
@@ -75,7 +72,7 @@ const COMMON_UNITS = ['件', '把', '套', '顶', '个', '双', '卷', '包', '�
 const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'createdAt' | 'updatedAt'>[] = [
   {
     name: '手工编织斗笠草帽',
-    zone: 'A区-传统农具农械库',
+    zone: '西门隔壁仓库',
     category: '农耕工具',
     quantity: 60,
     unit: '顶',
@@ -84,11 +81,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 15,
     supplier: '本地竹编工艺合作社',
     status: 'normal',
-    note: '悬挂于 A区-01号农具墙',
+    note: '悬挂于 西门隔壁仓库-01号农具墙',
   },
   {
     name: '儿童便携竹编小背篓',
-    zone: 'A区-传统农具农械库',
+    zone: '西门隔壁仓库',
     category: '农耕工具',
     quantity: 45,
     unit: '个',
@@ -97,11 +94,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 28,
     supplier: '本地竹编工艺合作社',
     status: 'normal',
-    note: '存放于 A区置物架第二层整理箱',
+    note: '存放于 西门隔壁仓库置物架第二层整理箱',
   },
   {
     name: '儿童防刺防滑农耕手套',
-    zone: 'F区-防护劳保总务仓',
+    zone: '小森林营地仓库',
     category: '防护安全',
     quantity: 120,
     unit: '双',
@@ -110,11 +107,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 4.5,
     supplier: '劳保批发商城',
     status: 'normal',
-    note: '存放于 F区-02整理箱按尺码分装',
+    note: '存放于 小森林营地仓库-02整理箱按尺码分装',
   },
   {
     name: '迷你木柄小铁锹',
-    zone: 'A区-传统农具农械库',
+    zone: '西门隔壁仓库',
     category: '农耕工具',
     quantity: 50,
     unit: '把',
@@ -123,11 +120,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 12,
     supplier: '农具五金制造厂',
     status: 'normal',
-    note: '立于 A区工具箱01号内',
+    note: '立于 西门隔壁仓库工具箱01号内',
   },
   {
     name: '家用传统双耳青石小石磨',
-    zone: 'D区-农耕烘焙手作室',
+    zone: '稻田餐厅仓库',
     category: '农耕工具',
     quantity: 8,
     unit: '台',
@@ -136,11 +133,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 160,
     supplier: '传统石雕工艺坊',
     status: 'normal',
-    note: '放置于烘焙体验室专用石磨台',
+    note: '放置于 稻田餐厅仓库专用石磨台',
   },
   {
     name: '扎染天然植物蓼蓝染液',
-    zone: 'B区-非遗手工扎染坊',
+    zone: '摩天轮仓库',
     category: '手工非遗',
     quantity: 16,
     unit: '瓶',
@@ -149,11 +146,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 35,
     supplier: '非遗植物染色工坊',
     status: 'normal',
-    note: '避光存放于 B区非遗原料柜下层',
+    note: '避光存放于 摩天轮仓库非遗原料柜下层',
   },
   {
     name: '扎染高密纯棉未漂白方巾',
-    zone: 'B区-非遗手工扎染坊',
+    zone: '摩天轮仓库',
     category: '手工非遗',
     quantity: 180,
     unit: '条',
@@ -162,11 +159,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 3.2,
     supplier: '纯棉布业批发',
     status: 'normal',
-    note: '防潮密封存放于 B区01物料箱',
+    note: '防潮密封存放于 摩天轮仓库01物料箱',
   },
   {
     name: '植物拓印纯棉帆布手提袋',
-    zone: 'B区-非遗手工扎染坊',
+    zone: '摩天轮仓库',
     category: '手工非遗',
     quantity: 95,
     unit: '个',
@@ -175,11 +172,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 5.5,
     supplier: '帆布包装直营店',
     status: 'normal',
-    note: '存放于 B区拓印物料架',
+    note: '存放于 摩天轮仓库拓印物料架',
   },
   {
     name: '植物拓印橡胶双头小木槌',
-    zone: 'B区-非遗手工扎染坊',
+    zone: '摩天轮仓库',
     category: '手工非遗',
     quantity: 35,
     unit: '把',
@@ -188,11 +185,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 8,
     supplier: '手作工具工坊',
     status: 'normal',
-    note: '存放于 B区木盒工具篮',
+    note: '存放于 摩天轮仓库木盒工具篮',
   },
   {
     name: '便携无线领夹扩音器(小蜜蜂)',
-    zone: 'G区-音响电子与教学具',
+    zone: '小森林营地仓库',
     category: '活动道具',
     quantity: 6,
     unit: '台',
@@ -201,11 +198,11 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 180,
     supplier: '电子数码直营',
     status: 'normal',
-    note: '存放于充电收纳柜，需保持随用随充',
+    note: '存放于 小森林营地仓库充电收纳柜',
   },
   {
     name: '研学应急随队医疗急救包',
-    zone: 'F区-防护劳保总务仓',
+    zone: '小森林营地仓库',
     category: '防护安全',
     quantity: 4,
     unit: '套',
@@ -214,7 +211,7 @@ const PRESET_MATERIALS: Omit<WarehouseMaterial, 'id' | 'updatedByEmail' | 'creat
     unitPrice: 85,
     supplier: '医药器械连锁',
     status: 'normal',
-    note: '放置于 F区进门显眼急救挂架',
+    note: '放置于 小森林营地仓库进门显眼急救挂架',
   },
 ];
 
@@ -943,7 +940,7 @@ export function WarehouseMaterialsView({ canEdit, onMaterialsLoaded }: Warehouse
                               autoFocus
                               type="text"
                               value={inlineZoneValue}
-                              placeholder="输入存放区块，如 A区-农具库"
+                              placeholder="输入存放区块，如 西门隔壁仓库"
                               disabled={savingZoneId === item.id}
                               onChange={(e) => setInlineZoneValue(e.target.value)}
                               onKeyDown={(e) => {
@@ -1097,7 +1094,7 @@ export function WarehouseMaterialsView({ canEdit, onMaterialsLoaded }: Warehouse
                 </label>
                 <input
                   type="text"
-                  placeholder="请输入物资所在区块，如：A区-传统农具仓、B区-非遗扎染坊02架"
+                  placeholder="请输入物资所在区块，如：西门隔壁仓库、摩天轮仓库、稻田餐厅仓库、小森林营地仓库"
                   value={formData.zone}
                   onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-[#e3ded2] bg-white focus:outline-none focus:border-[#27563c] font-semibold text-[#1e2c22]"
@@ -1105,20 +1102,21 @@ export function WarehouseMaterialsView({ canEdit, onMaterialsLoaded }: Warehouse
 
                 {/* 常用区块快捷填入标签 */}
                 <div>
-                  <span className="text-[11px] text-[#8b998e] block mb-1">点击快速选用常见或已有区块：</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {Array.from(new Set([...existingZones, ...COMMON_ZONES])).slice(0, 8).map((z) => (
+                  <span className="text-[11px] text-[#8b998e] block mb-1.5">点击快速选用园区仓库：</span>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(new Set([...COMMON_ZONES, ...existingZones])).map((z) => (
                       <button
                         key={z}
                         type="button"
                         onClick={() => setFormData({ ...formData, zone: z })}
-                        className={`text-[11px] px-2 py-0.5 rounded-md border transition-all ${
+                        className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all flex items-center gap-1.5 ${
                           formData.zone === z
-                            ? 'bg-[#27563c] text-white border-[#27563c]'
-                            : 'bg-white text-[#5d6e62] border-[#e3ded2] hover:border-[#27563c]'
+                            ? 'bg-[#27563c] text-white border-[#27563c] shadow-xs'
+                            : 'bg-white text-[#1e2c22] border-[#d8d3c5] hover:border-[#27563c] hover:bg-[#edf5ef]'
                         }`}
                       >
-                        {z}
+                        <MapPin className={`w-3.5 h-3.5 ${formData.zone === z ? 'text-white' : 'text-[#27563c]'}`} />
+                        <span>{z}</span>
                       </button>
                     ))}
                   </div>
